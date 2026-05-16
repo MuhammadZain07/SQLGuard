@@ -84,7 +84,7 @@ class PayloadInjector:
         self.session.headers.update({
             "User-Agent": (
                 "Mozilla/5.0 (compatible; SQLiScanner/1.0; "
-                "+https://github.com/your-repo/sqli-scanner)"
+                "+https://github.com/MuhammadZain07/SQLGuard"
             )
         })
 
