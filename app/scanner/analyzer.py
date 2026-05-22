@@ -77,8 +77,9 @@ SEVERITY_META: dict[str, dict] = {
 # Response-size difference threshold for boolean detection (bytes)
 BOOLEAN_SIZE_THRESHOLD = 50
 
-# Time threshold for time-based detection (milliseconds)
-TIME_THRESHOLD_MS = 4500
+# Fix 11: increased from 4500ms → 4800ms to stay safely below the new
+# 15s REQUEST_TIMEOUT while still reliably catching 5s time-based payloads.
+TIME_THRESHOLD_MS = 4800
 
 
 class ResponseAnalyzer:
@@ -89,15 +90,30 @@ class ResponseAnalyzer:
     Detection methods
     -----------------
     1. Error-based   : regex-match known DB error strings in the response body.
-    2. Boolean-based : compare response sizes for true vs false payloads.
+    2. Boolean-based : compare response sizes against a pre-fetched neutral baseline.
     3. Time-based    : flag response times > TIME_THRESHOLD_MS.
 
-    Call analyze(result) for each dict returned by PayloadInjector.inject().
+    Fix 5: Call set_baseline(url, parameter, size) BEFORE analyzing any results
+    for that parameter. This ensures boolean comparison uses a true neutral
+    response, not a previous injection response (which caused false positives).
     """
 
     def __init__(self):
-        # Cache last response size per (url, parameter) to enable boolean comparison
+        # Fix 5: Key: (url, parameter) → size of response with NEUTRAL input.
+        # Populated via set_baseline() in tasks.py before injection starts.
         self._baseline: dict[tuple, int] = {}
+
+    # ------------------------------------------------------------------
+    # Fix 5: Public method to register a neutral baseline
+    # ------------------------------------------------------------------
+
+    def set_baseline(self, url: str, parameter: str, neutral_response_size: int) -> None:
+        """
+        Register the response size for a neutral (non-malicious) request.
+        Must be called once per (url, parameter) BEFORE analyze() is called
+        for that pair, otherwise boolean-based detection is skipped.
+        """
+        self._baseline[(url, parameter)] = neutral_response_size
 
     # ------------------------------------------------------------------
     # Public entry point
@@ -116,14 +132,14 @@ class ResponseAnalyzer:
             response_snippet: str   (first 300 chars of response body)
             db_type         : str   (detected DB engine, if any)
         """
-        attack_type    = result.get("attack_type", "")
-        response_text  = result.get("response_text", "") or ""
-        response_ms    = result.get("response_time_ms", 0) or 0
-        timed_out      = result.get("timed_out", False)
-        url            = result.get("url", "")
-        parameter      = result.get("parameter", "")
+        attack_type   = result.get("attack_type", "")
+        response_text = result.get("response_text", "") or ""
+        response_ms   = result.get("response_time_ms", 0) or 0
+        timed_out     = result.get("timed_out", False)
+        url           = result.get("url", "")
+        parameter     = result.get("parameter", "")
 
-        cache_key = (url, parameter)
+        cache_key     = (url, parameter)
         response_size = len(response_text)
 
         # Run the three detectors in priority order
@@ -131,8 +147,9 @@ class ResponseAnalyzer:
         boolean_result = self._check_boolean_based(cache_key, response_size)
         time_result    = self._check_time_based(response_ms, timed_out)
 
-        # Update baseline cache AFTER boolean check
-        self._baseline[cache_key] = response_size
+        # Fix 5: baseline is set externally via set_baseline() and never
+        # overwritten here — removing the old self._baseline[cache_key] = response_size
+        # line that was causing the baseline to drift with each injection response.
 
         # ----- Decide outcome -----
         if error_result["detected"]:
@@ -145,8 +162,8 @@ class ResponseAnalyzer:
             severity  = "HIGH"
             vuln_type = "Time-Based"
             db_type   = ""
-            logger.info("VULN [Time-Based] %s param=%s (%.1f s)", url, parameter,
-                        response_ms / 1000)
+            logger.info("VULN [Time-Based] %s param=%s (%.1f s)",
+                        url, parameter, response_ms / 1000)
 
         elif boolean_result["detected"]:
             severity  = "MEDIUM"
@@ -156,7 +173,6 @@ class ResponseAnalyzer:
                         url, parameter, boolean_result["delta"])
 
         else:
-            # Not vulnerable
             return {
                 "is_vulnerable": False,
                 "vuln_type": "",
@@ -191,17 +207,21 @@ class ResponseAnalyzer:
 
     def _check_boolean_based(self, cache_key: tuple, current_size: int) -> dict:
         """
-        Compare current response size against the cached baseline size.
-        A significant difference suggests the condition changed the query outcome.
+        Compare current response size against the neutral baseline set by
+        set_baseline(). A significant difference suggests the injected condition
+        changed the query outcome.
+        If no baseline exists for this key, detection is skipped entirely.
         """
         if cache_key not in self._baseline:
+            # Fix 5: no baseline → skip rather than compare against a previous
+            # injection response (which was causing false positives before)
             return {"detected": False, "delta": 0}
 
         delta = abs(current_size - self._baseline[cache_key])
-        detected = delta >= BOOLEAN_SIZE_THRESHOLD
-        return {"detected": detected, "delta": delta}
+        return {"detected": delta >= BOOLEAN_SIZE_THRESHOLD, "delta": delta}
 
     def _check_time_based(self, response_ms: int, timed_out: bool) -> dict:
         """Flag responses that took longer than the threshold (time-based blind)."""
+        # Fix 11: TIME_THRESHOLD_MS is now 4800 instead of 4500
         detected = timed_out or (response_ms >= TIME_THRESHOLD_MS)
         return {"detected": detected}

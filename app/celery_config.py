@@ -7,7 +7,18 @@ def make_celery(app):
         broker=Config.CELERY_BROKER_URL,
         backend=Config.CELERY_RESULT_BACKEND
     )
-    celery.conf.update(app.config)
+
+    # Only pass Celery-specific config, not the entire Flask config
+    celery.conf.update(
+        broker_url=Config.CELERY_BROKER_URL,
+        result_backend=Config.CELERY_RESULT_BACKEND,
+        task_serializer="json",
+        accept_content=["json"],
+        result_serializer="json",
+        timezone="UTC",
+        enable_utc=True,
+    )
+
     class ContextTask(celery.Task):
         def __call__(self, *args, **kwargs):
             with app.app_context():

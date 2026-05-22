@@ -7,13 +7,11 @@ import requests
 logger = logging.getLogger(__name__)
 
 # Load payloads from app/scanner/payloads/*.txt
-# Folder location: app/scanner/payloads/
-
 PAYLOADS_DIR = Path(__file__).parent / "payloads"
- 
+
 ATTACK_TYPES = ["error_based", "boolean_based", "time_based", "union_based"]
- 
- 
+
+
 def _load_payloads() -> dict[str, list[str]]:
     """
     Read each .txt file in the payloads/ folder.
@@ -30,8 +28,8 @@ def _load_payloads() -> dict[str, list[str]]:
         payloads[attack_type] = [line.strip() for line in lines if line.strip()]
         logger.debug("Loaded %s payloads from %s", len(payloads[attack_type]), filepath.name)
     return payloads
- 
- 
+
+
 PAYLOADS = _load_payloads()
 
 # Flat list with attack-type metadata attached
@@ -51,7 +49,13 @@ class PayloadInjector:
         response_text, response_time_ms, status_code, form_data
     """
 
-    REQUEST_TIMEOUT = 12   # seconds — must exceed time-based payload delay (5 s)
+    # Fix 11: increased from 12s → 15s so time-based payloads (5s sleep)
+    # have enough headroom for network latency and server overhead.
+    REQUEST_TIMEOUT = 15
+
+    # Fix 10: 150ms delay between requests — avoids hammering the target
+    # and getting the scanner's IP blocked.
+    REQUEST_DELAY_S = 0.15
 
     def __init__(self, targets: list[dict]):
         self.targets = targets
@@ -74,8 +78,10 @@ class PayloadInjector:
         """
         results: list[dict] = []
         total = len(self.targets) * len(ALL_PAYLOADS)
-        logger.info("Injector starting: %s target(s) × %s payload(s) = %s request(s).",
-                    len(self.targets), len(ALL_PAYLOADS), total)
+        logger.info(
+            "Injector starting: %s target(s) × %s payload(s) = %s request(s).",
+            len(self.targets), len(ALL_PAYLOADS), total,
+        )
 
         for target in self.targets:
             for payload_info in ALL_PAYLOADS:
@@ -92,11 +98,11 @@ class PayloadInjector:
 
     def _send_request(self, target: dict, payload_info: dict) -> dict | None:
         """Fire one payload at one target. Returns a result dict or None on error."""
-        url        = target["url"]
-        method     = target["method"].upper()
-        parameter  = target["parameter"]
-        form_data  = dict(target.get("form_data", {}))
-        payload    = payload_info["payload"]
+        url         = target["url"]
+        method      = target["method"].upper()
+        parameter   = target["parameter"]
+        form_data   = dict(target.get("form_data", {}))
+        payload     = payload_info["payload"]
         attack_type = payload_info["attack_type"]
 
         # Inject payload into the target parameter only
@@ -108,18 +114,21 @@ class PayloadInjector:
                 response = self.session.post(
                     url,
                     data=injected_data,
-                    timeout=self.REQUEST_TIMEOUT,
+                    timeout=self.REQUEST_TIMEOUT,  # Fix 11: now 15s
                     allow_redirects=True,
                 )
             else:
                 response = self.session.get(
                     url,
                     params=injected_data,
-                    timeout=self.REQUEST_TIMEOUT,
+                    timeout=self.REQUEST_TIMEOUT,  # Fix 11: now 15s
                     allow_redirects=True,
                 )
 
             elapsed_ms = int((time.monotonic() - start) * 1000)
+
+            # Fix 10: throttle after every successful request
+            time.sleep(self.REQUEST_DELAY_S)
 
             return {
                 "url": url,
@@ -136,6 +145,10 @@ class PayloadInjector:
         except requests.Timeout:
             elapsed_ms = int((time.monotonic() - start) * 1000)
             logger.debug("Timeout for %s [%s=%s]", url, parameter, payload[:30])
+
+            # Fix 10: throttle on timeout too
+            time.sleep(self.REQUEST_DELAY_S)
+
             # Timeouts are meaningful for time-based detection — return them
             return {
                 "url": url,
@@ -152,4 +165,8 @@ class PayloadInjector:
 
         except requests.RequestException as exc:
             logger.warning("Request error for %s: %s", url, exc)
+
+            # Fix 10: throttle even on hard errors so we don't spam the target
+            time.sleep(self.REQUEST_DELAY_S)
+
             return None
