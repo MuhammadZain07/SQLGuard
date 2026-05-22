@@ -1,11 +1,13 @@
 from flask import Flask
 from .models.database import db
 from config import Config
+from celery import Celery
 
-celery = None  # will be set by create_app()
+# Create a real Celery instance upfront — not None
+# It gets fully configured inside create_app()
+celery = Celery(__name__)
 
 def create_app():
-    global celery
     app = Flask(__name__)
     app.config.from_object(Config)
 
@@ -14,8 +16,9 @@ def create_app():
     with app.app_context():
         db.create_all()
 
+    # Configure the celery instance that already exists
     from .celery_config import make_celery
-    celery = make_celery(app)
+    make_celery(app, celery)  # pass existing celery in, configure it
 
     from .routes.main import main_bp
     from .routes.scan import scan_bp
