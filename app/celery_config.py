@@ -1,17 +1,11 @@
-from celery import Celery
 from config import Config
 
-def make_celery(app):
-    celery = Celery(
-        app.import_name,
-        broker=Config.CELERY_BROKER_URL,
-        backend=Config.CELERY_RESULT_BACKEND
-    )
-
-    # Only pass Celery-specific config, not the entire Flask config
+def make_celery(app, celery):
+    # Configure the existing celery instance instead of creating a new one
     celery.conf.update(
         broker_url=Config.CELERY_BROKER_URL,
         result_backend=Config.CELERY_RESULT_BACKEND,
+        broker_connection_retry_on_startup=True,  # add this
         task_serializer="json",
         accept_content=["json"],
         result_serializer="json",
