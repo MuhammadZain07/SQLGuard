@@ -2,7 +2,7 @@ import logging
 import requests as http_requests 
 from datetime import datetime
 
-from app import celery  # Fix 1: import celery from app factory, not bootstrapped here
+from app import celery  
 from app.models.database import db, Scan, Vulnerability
 from app.scanner.crawler import WebCrawler
 from app.scanner.injector import PayloadInjector
