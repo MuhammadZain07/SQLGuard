@@ -1,0 +1,23 @@
+# Web framework
+Flask==3.0.3
+Flask-SQLAlchemy==3.1.1
+
+# Database
+SQLAlchemy==2.0.36
+
+# Background tasks
+celery==5.3.6
+redis==5.0.1
+
+# Website crawling
+requests==2.31.0
+beautifulsoup4==4.12.3
+
+# PDF generation
+WeasyPrint==62.3
+
+# Read .env file
+python-dotenv==1.0.1
+
+# Production server
+gunicorn==22.0.0
