@@ -11,9 +11,9 @@ def create_app():
     with app.app_context():
         db.create_all()
 
-    # from .routes.main import main_bp
-    # from .routes.scan import scan_bp
-    # app.register_blueprint(main_bp)
-    # app.register_blueprint(scan_bp)
+    from .routes.main import main_bp
+    from .routes.scan import scan_bp
+    app.register_blueprint(main_bp)
+    app.register_blueprint(scan_bp)
 
     return app
