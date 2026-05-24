@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — SQLi Scanner{% endblock %}
+{% block breadcrumb %}Dashboard{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<!-- 
+    STAT CARDS
+    scans list comes from main.py dashboard() route
+    we count totals using Jinja2 filters
+-->
+<div class="stat-row">
+
+    <div class="stat-card total">
+        <div class="stat-number">{{ scans | length }}</div>
+        <div class="stat-label">Total Scans</div>
+    </div>
+
+    <div class="stat-card low">
+        <div class="stat-number">
+            {{ scans | selectattr('status','equalto','completed') | list | length }}
+        </div>
+        <div class="stat-label">Completed</div>
+        <div class="stat-sub">finished scans</div>
+    </div>
+
+    <div class="stat-card medium">
+        <div class="stat-number">
+            {{ scans | selectattr('status','equalto','running') | list | length }}
+        </div>
+        <div class="stat-label">Running</div>
+        <div class="stat-sub">in progress</div>
+    </div>
+
+    <div class="stat-card critical">
+        <div class="stat-number">
+            {{ scans | selectattr('status','equalto','failed') | list | length }}
+        </div>
+        <div class="stat-label">Failed</div>
+        <div class="stat-sub">check errors</div>
+    </div>
+
+    <div class="stat-card high">
+        <div class="stat-number">
+            {{ scans | sum(attribute='vuln_count') }}
+        </div>
+        <div class="stat-label">Total Vulns</div>
+        <div class="stat-sub">all scans</div>
+    </div>
+
+</div>
+
+<!-- 
+    CHARTS
+    two charts side by side
+    data is passed to dashboard.js using simple JS variables below
+-->
+<div class="charts-row">
+
+    <!-- doughnut chart: completed vs running vs failed -->
+    <div class="card-dark chart-card">
+        <div class="chart-title">Scan Status Breakdown</div>
+        <div class="doughnut-wrap">
+            <canvas id="statusChart"></canvas>
+        </div>
+    </div>
+
+    <!-- bar chart: vulns per scan -->
+    <div class="card-dark chart-card">
+        <div class="chart-title">Vulnerabilities Per Scan</div>
+        <canvas id="vulnBarChart" height="140"></canvas>
+    </div>
+
+</div>
+
+<!-- 
+    RECENT SCANS TABLE
+    loop through scans and show each one as a row
+-->
+<div class="card-dark" style="margin-top:20px;">
+    <div class="table-header">
+        <div class="chart-title" style="margin-bottom:0;">Recent Scans</div>
+        <a href="{{ url_for('main.history') }}" class="view-all-btn">View All</a>
+    </div>
+    <table class="dash-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Target URL</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Vulns</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if scans %}
+                {% for s in scans %}
+                <tr>
+                    <td>#{{ s.id }}</td>
+                    <td class="url-cell">{{ s.target_url }}</td>
+                    <td>{{ s.created_at.strftime('%b %d, %Y') }}</td>
+                    <td>
+                        <span class="status-badge status-{{ s.status }}">
+                            {{ s.status }}
+                        </span>
+                    </td>
+                    <td>{{ s.vuln_count }}</td>
+                    <td>
+                        <a href="{{ url_for('main.scan_results', scan_id=s.id) }}"
+                           class="view-btn">View</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="6" class="empty-row">No scans yet!</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<!-- pass numbers to dashboard.js for charts -->
+<script>
+    var completedCount = {{ scans | selectattr('status','equalto','completed') | list | length }};
+    var runningCount   = {{ scans | selectattr('status','equalto','running')   | list | length }};
+    var failedCount    = {{ scans | selectattr('status','equalto','failed')    | list | length }};
+    var scanLabels = [{% for s in scans %}"#{{ s.id }}"{% if not loop.last %},{% endif %}{% endfor %}];
+    var vulnCounts = [{% for s in scans %}{{ s.vuln_count }}{% if not loop.last %},{% endif %}{% endfor %}];
+</script>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}
