@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — SQLi Scanner{% endblock %}
+{% block breadcrumb %}Dashboard{% endblock %}
+ 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/scan.css') }}">
+{% endblock %}
+ 
+{% block content %}
+ 
+<!-- ── URL Bar + Run Scan ── -->
+<div class="scan-bar">
+    <input type="text" id="targetUrl" class="scan-input"
+           placeholder="https://example.com/login" autocomplete="off">
+    <button class="scan-btn" id="scanBtn" onclick="startScan()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+        </svg>
+        Run Scan
+    </button>
+</div>
+ 
+<!-- ── Progress Bar (hidden until scan starts) ── -->
+<div class="progress-wrap" id="progressWrap" style="display:none;">
+    <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progressBar"></div>
+    </div>
+    <span class="progress-label" id="progressLabel">Initializing...</span>
+    <span class="progress-pct" id="progressPct">0%</span>
+</div>
+ 
+<!-- ── Terminal Output (hidden until scan starts) ── -->
+<div class="terminal-wrap" id="terminalWrap" style="display:none;">
+    <div class="terminal-header">
+        <span class="dot red"></span>
+        <span class="dot yellow"></span>
+        <span class="dot green"></span>
+        <span class="terminal-title">sqli-scanner — output</span>
+    </div>
+    <div class="terminal-box" id="terminalBox"></div>
+</div>
+ 
+<!-- ── Stat Cards (hidden until scan completes) ── -->
+<div class="stat-row" id="statRow" style="display:none;">
+    <div class="stat-card total">
+        <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/>
+            <line x1="8" y1="12" x2="16" y2="12"/>
+        </svg>
+        <div class="stat-number" id="statTotal">0</div>
+        <div class="stat-label">Total Findings</div>
+    </div>
+    <div class="stat-card critical">
+        <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        <div class="stat-number" id="statCritical">0</div>
+        <div class="stat-label">Critical</div>
+        <div class="stat-sub">immediate action</div>
+    </div>
+    <div class="stat-card high">
+        <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <div class="stat-number" id="statHigh">0</div>
+        <div class="stat-label">High</div>
+        <div class="stat-sub">urgent attention</div>
+    </div>
+    <div class="stat-card medium">
+        <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+        <div class="stat-number" id="statMedium">0</div>
+        <div class="stat-label">Medium</div>
+        <div class="stat-sub">schedule fix</div>
+    </div>
+    <div class="stat-card low">
+        <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 11 12 14 22 4"/>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+        </svg>
+        <div class="stat-number" id="statLow">0</div>
+        <div class="stat-label">Low / Info</div>
+        <div class="stat-sub">monitor</div>
+    </div>
+</div>
+ 
+{% endblock %}
+ 
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/scan.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,263 @@
+/* ── Top Two Panels ── */
+.result-top {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 0;
+}
+
+/* ── Risk Panel ── */
+.risk-panel { text-align: center; }
+
+.risk-score {
+    font-size: 64px;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 4px;
+}
+.risk-score.risk-critical { color: var(--severity-critical); }
+.risk-score.risk-high     { color: var(--severity-high); }
+.risk-score.risk-medium   { color: var(--severity-medium); }
+.risk-score.risk-low      { color: var(--severity-low); }
+
+.risk-label-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
+    margin-bottom: 12px;
+}
+
+.risk-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    padding: 4px 14px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+}
+.risk-badge.risk-critical { background: rgba(248,81,73,0.15); color: var(--severity-critical); border: 1px solid rgba(248,81,73,0.3); }
+.risk-badge.risk-high     { background: rgba(210,153,34,0.15); color: var(--severity-high);     border: 1px solid rgba(210,153,34,0.3); }
+.risk-badge.risk-medium   { background: rgba(63,185,80,0.15);  color: var(--severity-medium);   border: 1px solid rgba(63,185,80,0.3); }
+.risk-badge.risk-low      { background: rgba(88,166,255,0.15); color: var(--severity-low);      border: 1px solid rgba(88,166,255,0.3); }
+
+/* Severity Bars */
+.severity-bars { text-align: left; margin-top: 8px; }
+
+.sev-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.sev-name { font-size: 12px; width: 56px; }
+.critical-text { color: var(--severity-critical); }
+.high-text     { color: var(--severity-high); }
+.medium-text   { color: var(--severity-medium); }
+.low-text      { color: var(--severity-low); }
+
+.sev-bar-bg {
+    flex: 1;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.sev-bar-fill { height: 100%; border-radius: 3px; min-width: 4px; transition: width 0.6s ease; }
+.critical-bg { background: var(--severity-critical); }
+.high-bg     { background: var(--severity-high); }
+.medium-bg   { background: var(--severity-medium); }
+.low-bg      { background: var(--severity-low); }
+
+.sev-count { font-size: 12px; color: var(--text-secondary); width: 16px; text-align: right; }
+
+/* ── Details Panel ── */
+.details-panel { }
+
+.details-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.detail-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border-light);
+}
+.detail-row:last-child { border-bottom: none; }
+
+.detail-icon { color: var(--text-muted); flex-shrink: 0; }
+.detail-key  { font-size: 12px; color: var(--text-secondary); min-width: 110px; }
+.detail-val  { font-size: 12px; color: var(--text-primary); font-weight: 500; margin-left: auto; text-align: right; }
+
+.url-truncate {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+}
+
+.status-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 3px;
+    letter-spacing: 0.05em;
+}
+.status-completed { background: rgba(63,185,80,0.15); color: var(--accent-green); }
+.status-failed    { background: rgba(248,81,73,0.15); color: var(--severity-critical); }
+.status-running   { background: rgba(88,166,255,0.15); color: var(--severity-low); }
+.status-pending   { background: rgba(139,148,158,0.15); color: var(--text-muted); }
+
+.risk-critical { color: var(--severity-critical); }
+.risk-high     { color: var(--severity-high); }
+.risk-medium   { color: var(--severity-medium); }
+.risk-low      { color: var(--severity-low); }
+
+/* ── Vuln Report Section ── */
+.vuln-report-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.vuln-report-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.vuln-report-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+.vuln-filters {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    background: var(--bg-main);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.filter-btn:hover, .filter-btn.active {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+    border-color: var(--text-muted);
+}
+.filter-btn.critical-btn.active { border-color: var(--severity-critical); color: var(--severity-critical); }
+.filter-btn.high-btn.active     { border-color: var(--severity-high);     color: var(--severity-high); }
+.filter-btn.medium-btn.active   { border-color: var(--severity-medium);   color: var(--severity-medium); }
+.filter-btn.low-btn.active      { border-color: var(--severity-low);      color: var(--severity-low); }
+
+.export-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-card-hover);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 5px 14px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.15s;
+}
+.export-btn:hover { background: var(--border); }
+
+/* ── Vuln Items ── */
+.vuln-list { display: flex; flex-direction: column; gap: 6px; }
+
+.vuln-item {
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.vuln-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    cursor: pointer;
+    background: var(--bg-main);
+    transition: background 0.15s;
+}
+.vuln-row:hover { background: var(--bg-card-hover); }
+
+.vuln-name  { flex: 1; font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.vuln-param { font-size: 11px; color: var(--text-secondary); }
+.vuln-method { font-size: 10px; color: var(--text-muted); background: var(--bg-card); border: 1px solid var(--border); padding: 2px 6px; border-radius: 3px; }
+.vuln-chevron { color: var(--text-muted); margin-left: auto; transition: transform 0.2s; flex-shrink: 0; }
+
+/* Expanded detail */
+.vuln-detail {
+    padding: 16px;
+    background: var(--bg-card);
+    border-top: 1px solid var(--border-light);
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.dg-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 5px;
+}
+
+.dg-val {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    word-break: break-all;
+}
+
+.dg-val.mono {
+    font-family: var(--font-mono);
+    background: var(--bg-main);
+    padding: 6px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border-light);
+    font-size: 11px;
+}
+
+/* No vulns */
+.no-vulns {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--text-muted);
+}
+.no-vulns svg { margin-bottom: 12px; opacity: 0.4; }
+.no-vulns p { font-size: 13px; }

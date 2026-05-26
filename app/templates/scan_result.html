@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+{% block title %}Scan Results — SQLi Scanner{% endblock %}
+{% block breadcrumb %}Scan Results{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/result.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<!-- ── Top Two Panels ── -->
+<div class="result-top">
+
+    <!-- Left: Risk Score -->
+    <div class="card-dark risk-panel">
+        {% set critical = vulnerabilities | selectattr('severity','equalto','CRITICAL') | list | length %}
+        {% set high     = vulnerabilities | selectattr('severity','equalto','HIGH')     | list | length %}
+        {% set medium   = vulnerabilities | selectattr('severity','equalto','MEDIUM')   | list | length %}
+        {% set low      = vulnerabilities | selectattr('severity','equalto','LOW')      | list | length %}
+        {% set total    = vulnerabilities | length %}
+
+        {% if critical > 0 %}
+            {% set risk_score = 85 %}
+            {% set risk_label = 'CRITICAL RISK' %}
+            {% set risk_class = 'risk-critical' %}
+        {% elif high > 0 %}
+            {% set risk_score = 65 %}
+            {% set risk_label = 'HIGH RISK' %}
+            {% set risk_class = 'risk-high' %}
+        {% elif medium > 0 %}
+            {% set risk_score = 40 %}
+            {% set risk_label = 'MODERATE RISK' %}
+            {% set risk_class = 'risk-medium' %}
+        {% else %}
+            {% set risk_score = 16 %}
+            {% set risk_label = 'LOW RISK' %}
+            {% set risk_class = 'risk-low' %}
+        {% endif %}
+
+        <div class="risk-score {{ risk_class }}">{{ risk_score }}</div>
+        <div class="risk-label-sub">RISK SCORE / 100</div>
+        <span class="risk-badge {{ risk_class }}">{{ risk_label }}</span>
+
+        <div class="severity-bars">
+            <div class="sev-row">
+                <span class="sev-name critical-text">Critical</span>
+                <div class="sev-bar-bg"><div class="sev-bar-fill critical-bg" style="width:{{ [critical * 20, 100] | min }}%"></div></div>
+                <span class="sev-count">{{ critical }}</span>
+            </div>
+            <div class="sev-row">
+                <span class="sev-name high-text">High</span>
+                <div class="sev-bar-bg"><div class="sev-bar-fill high-bg" style="width:{{ [high * 20, 100] | min }}%"></div></div>
+                <span class="sev-count">{{ high }}</span>
+            </div>
+            <div class="sev-row">
+                <span class="sev-name medium-text">Medium</span>
+                <div class="sev-bar-bg"><div class="sev-bar-fill medium-bg" style="width:{{ [medium * 20, 100] | min }}%"></div></div>
+                <span class="sev-count">{{ medium }}</span>
+            </div>
+            <div class="sev-row">
+                <span class="sev-name low-text">Low</span>
+                <div class="sev-bar-bg"><div class="sev-bar-fill low-bg" style="width:{{ [low * 20, 100] | min }}%"></div></div>
+                <span class="sev-count">{{ low }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right: Scan Details -->
+    <div class="card-dark details-panel">
+        <div class="details-title">Scan Details</div>
+        <div class="detail-row">
+            <span class="detail-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                </svg>
+            </span>
+            <span class="detail-key">Target</span>
+            <span class="detail-val url-truncate">{{ scan.target_url }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                </svg>
+            </span>
+            <span class="detail-key">Status</span>
+            <span class="detail-val">
+                <span class="status-badge status-{{ scan.status }}">{{ scan.status | upper }}</span>
+            </span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+            </span>
+            <span class="detail-key">Date</span>
+            <span class="detail-val">{{ scan.created_at.strftime('%a, %b %d, %Y') }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                </svg>
+            </span>
+            <span class="detail-key">Pages Crawled</span>
+            <span class="detail-val">{{ scan.pages_crawled }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+            </span>
+            <span class="detail-key">Risk Level</span>
+            <span class="detail-val {{ risk_class }}">{{ risk_label }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+            </span>
+            <span class="detail-key">Vulnerabilities</span>
+            <span class="detail-val">{{ total }}</span>
+        </div>
+    </div>
+
+</div>
+
+<!-- ── Vulnerability Report ── -->
+<div class="card-dark" style="margin-top: 20px;">
+    <div class="vuln-report-header">
+        <div>
+            <div class="vuln-report-title">Vulnerability Report</div>
+            <div class="vuln-report-sub">{{ scan.target_url }} · {{ scan.created_at.strftime('%m/%d/%Y, %I:%M:%S %p') }}</div>
+        </div>
+        <div class="vuln-filters">
+            <button class="filter-btn active" onclick="filterVulns('all', this)">All</button>
+            <button class="filter-btn critical-btn" onclick="filterVulns('CRITICAL', this)">Critical</button>
+            <button class="filter-btn high-btn" onclick="filterVulns('HIGH', this)">High</button>
+            <button class="filter-btn medium-btn" onclick="filterVulns('MEDIUM', this)">Medium</button>
+            <button class="filter-btn low-btn" onclick="filterVulns('LOW', this)">Low</button>
+            <a href="{{ url_for('main.generate_report', scan_id=scan.id) }}" class="export-btn">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Export PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- Vuln List -->
+    {% if vulnerabilities %}
+        <div class="vuln-list" id="vulnList">
+            {% for v in vulnerabilities %}
+            <div class="vuln-item" data-severity="{{ v.severity }}">
+                <div class="vuln-row" onclick="toggleVuln(this)">
+                    <span class="badge-{{ v.severity | lower }}">{{ v.severity }}</span>
+                    <span class="vuln-name">{{ v.vuln_type }}</span>
+                    <span class="vuln-param">param: <strong>{{ v.parameter }}</strong></span>
+                    <span class="vuln-method">{{ v.method }}</span>
+                    <svg class="vuln-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                </div>
+                <div class="vuln-detail" style="display:none;">
+                    <div class="detail-grid">
+                        <div class="dg-item">
+                            <div class="dg-label">URL</div>
+                            <div class="dg-val url-truncate">{{ v.url }}</div>
+                        </div>
+                        <div class="dg-item">
+                            <div class="dg-label">Payload Used</div>
+                            <div class="dg-val mono">{{ v.payload }}</div>
+                        </div>
+                        <div class="dg-item">
+                            <div class="dg-label">Response Snippet</div>
+                            <div class="dg-val mono">{{ v.response_snippet }}</div>
+                        </div>
+                        <div class="dg-item">
+                            <div class="dg-label">Recommendation</div>
+                            <div class="dg-val">{{ v.recommendation }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="no-vulns">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <polyline points="9 11 12 14 22 4"/>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+            </svg>
+            <p>No vulnerabilities found for this scan.</p>
+        </div>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/utils.js') }}"></script>
+<script>
+function toggleVuln(row) {
+    const detail = row.nextElementSibling;
+    const chevron = row.querySelector('.vuln-chevron');
+    const isOpen = detail.style.display === 'block';
+    detail.style.display = isOpen ? 'none' : 'block';
+    chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+}
+
+function filterVulns(severity, btn) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.vuln-item').forEach(item => {
+        item.style.display = (severity === 'all' || item.dataset.severity === severity) ? 'block' : 'none';
+    });
+}
+</script>
+{% endblock %}
