@@ -34,10 +34,10 @@ def history():
     return render_template("history.html", scans=scans)
 
 
-# Fix 9: added missing 'reports' route — url_for('main.reports') in base.html was crashing
-@main_bp.route("/reports")
-def reports():
-    return render_template("reports.html")
+# Fix 9: added missing 'report' route — url_for('main.report') in base.html was crashing
+@main_bp.route("/report")
+def report():
+    return render_template("report.html")
 
 
 # Fix 9: added missing 'news' route — url_for('main.news') in base.html was crashing
