@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Reports — SQLi Scanner{% endblock %}
+{% block breadcrumb %}Reports{% endblock %}
+
+{% block content %}
+
+<div class="page-title">Reports</div>
+<div class="page-sub">Download scan reports for your records</div>
+
+<!-- list all scans with a download button for each -->
+<div class="card-dark">
+    <table class="rep-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Target URL</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Vulns</th>
+                <th>Download</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if scans %}
+                {% for s in scans %}
+                <tr>
+                    <td>#{{ s.id }}</td>
+                    <td class="url-cell">{{ s.target_url }}</td>
+                    <td>{{ s.created_at.strftime('%b %d, %Y') }}</td>
+                    <td>
+                        <span class="status-badge status-{{ s.status }}">
+                            {{ s.status }}
+                        </span>
+                    </td>
+                    <td>{{ s.vuln_count }}</td>
+                    <td>
+                        <!-- calls download_report route in main.py -->
+                        <a href="{{ url_for('main.download_report', scan_id=s.id) }}"
+                           class="download-btn">
+                           Download
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="6" class="empty-row">No scans yet to download!</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<style>
+.page-title { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+.page-sub   { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+
+.rep-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+
+.rep-table th {
+    text-align: left;
+    padding: 10px 14px;
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+}
+.rep-table td {
+    padding: 13px 14px;
+    border-bottom: 1px solid var(--border-light);
+    color: var(--text-secondary);
+}
+.rep-table tr:last-child td { border-bottom: none; }
+.rep-table tr:hover td { background: var(--bg-card-hover); }
+
+.url-cell {
+    max-width: 280px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-primary);
+}
+
+.empty-row { text-align: center; color: var(--text-muted); padding: 32px !important; }
+
+.status-badge {
+    font-size: 10px; font-weight: 700;
+    padding: 3px 8px; border-radius: 3px; text-transform: uppercase;
+}
+.status-completed { background: rgba(63,185,80,0.15);   color: #3fb950; }
+.status-failed    { background: rgba(248,81,73,0.15);   color: #f85149; }
+.status-running   { background: rgba(88,166,255,0.15);  color: #58a6ff; }
+.status-pending   { background: rgba(139,148,158,0.15); color: #8b949e; }
+
+.download-btn {
+    font-size: 11px;
+    color: #3fb950;
+    text-decoration: none;
+    padding: 4px 12px;
+    border: 1px solid rgba(63,185,80,0.3);
+    border-radius: 4px;
+    background: rgba(63,185,80,0.08);
+}
+.download-btn:hover { background: rgba(63,185,80,0.15); }
+</style>
+
+{% endblock %}
