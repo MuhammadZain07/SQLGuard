@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}Security News — SQLi Scanner{% endblock %}
+{% block breadcrumb %}Security News{% endblock %}
+
+{% block content %}
+
+<div class="page-title">Security News</div>
+<div class="page-sub">Latest SQL injection and web security updates</div>
+
+<!-- 6 hardcoded news cards - works fully offline at viva -->
+<div class="news-grid">
+
+    <div class="news-card">
+        <span class="news-tag critical">Critical</span>
+        <div class="news-title">SQL Injection Remains Top Web Vulnerability in 2025</div>
+        <div class="news-body">OWASP reports that SQL injection continues to be one of the most dangerous vulnerabilities. Attackers use it to read, modify and delete database records without any authorization.</div>
+        <div class="news-footer">
+            <span class="news-source">OWASP</span>
+            <span class="news-date">May 2025</span>
+        </div>
+    </div>
+
+    <div class="news-card">
+        <span class="news-tag high">High</span>
+        <div class="news-title">Blind SQL Injection Attacks on the Rise</div>
+        <div class="news-body">Security researchers noticed an increase in blind SQL injection attacks where no error messages are shown. Attackers use boolean and time-based techniques to extract data silently.</div>
+        <div class="news-footer">
+            <span class="news-source">CVE Database</span>
+            <span class="news-date">April 2025</span>
+        </div>
+    </div>
+
+    <div class="news-card">
+        <span class="news-tag medium">Medium</span>
+        <div class="news-title">Parameterized Queries: Best Defense Against SQLi</div>
+        <div class="news-body">Security experts recommend using prepared statements and parameterized queries as the most effective way to prevent SQL injection. Never build SQL queries using string concatenation.</div>
+        <div class="news-footer">
+            <span class="news-source">SANS Institute</span>
+            <span class="news-date">March 2025</span>
+        </div>
+    </div>
+
+    <div class="news-card">
+        <span class="news-tag critical">Critical</span>
+        <div class="news-title">Major E-Commerce Site Breached via SQL Injection</div>
+        <div class="news-body">A large online retailer suffered a data breach exposing over 2 million customer records. Attackers exploited an unpatched SQL injection vulnerability in the login form.</div>
+        <div class="news-footer">
+            <span class="news-source">Security Weekly</span>
+            <span class="news-date">February 2025</span>
+        </div>
+    </div>
+
+    <div class="news-card">
+        <span class="news-tag high">High</span>
+        <div class="news-title">Union-Based SQLi Used to Dump Full Databases</div>
+        <div class="news-body">Researchers demonstrated how union-based SQL injection can extract entire database contents in a single request. Input validation and WAF rules are critical countermeasures.</div>
+        <div class="news-footer">
+            <span class="news-source">Portswigger</span>
+            <span class="news-date">January 2025</span>
+        </div>
+    </div>
+
+    <div class="news-card">
+        <span class="news-tag low">Info</span>
+        <div class="news-title">How to Test Your App for SQL Injection</div>
+        <div class="news-body">Regular security testing using automated scanners helps developers find and fix SQL injection issues before attackers do. Combine automated testing with manual code review for best results.</div>
+        <div class="news-footer">
+            <span class="news-source">SQLi Scanner Guide</span>
+            <span class="news-date">2025</span>
+        </div>
+    </div>
+
+</div>
+
+<!-- news page CSS is written directly here - simple and easy -->
+<style>
+.page-title { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+.page-sub   { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+
+/* 3 cards per row */
+.news-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+/* each card */
+.news-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.news-card:hover { border-color: var(--text-muted); }
+
+/* tag badge */
+.news-tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    width: fit-content;
+}
+.news-tag.critical { background: rgba(248,81,73,0.15);  color: #f85149; }
+.news-tag.high     { background: rgba(210,153,34,0.15); color: #d29922; }
+.news-tag.medium   { background: rgba(63,185,80,0.15);  color: #3fb950; }
+.news-tag.low      { background: rgba(88,166,255,0.15); color: #58a6ff; }
+
+/* headline */
+.news-title { font-size: 14px; font-weight: 700; color: var(--text-primary); line-height: 1.4; }
+
+/* description */
+.news-body  { font-size: 12px; color: var(--text-secondary); line-height: 1.7; flex: 1; }
+
+/* bottom row */
+.news-footer {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-light);
+}
+.news-source { font-size: 11px; color: var(--accent-blue-light); font-weight: 600; }
+.news-date   { font-size: 11px; color: var(--text-muted); }
+</style>
+
+{% endblock %}

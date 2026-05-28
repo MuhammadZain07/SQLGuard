@@ -35,15 +35,20 @@ def history():
 
 
 # Fix 9: added missing 'report' route — url_for('main.report') in base.html was crashing
-@main_bp.route("/report")
-def report():
-    return render_template("report.html")
+@main_bp.route("/reports")
+def reports():
+    scans = Scan.query.order_by(Scan.created_at.desc()).all()
+    return render_template("reports.html", scans=scans)
 
 
 # Fix 9: added missing 'news' route — url_for('main.news') in base.html was crashing
 @main_bp.route("/news")
 def news():
     return render_template("news.html")
+
+
+
+
 
 
 @main_bp.route("/report/<int:scan_id>/download")
@@ -62,3 +67,4 @@ def download_report(scan_id):
         as_attachment=True,
         download_name=f"report_{scan_id}.txt"
     )
+
