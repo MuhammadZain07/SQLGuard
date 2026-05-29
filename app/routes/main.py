@@ -2,6 +2,7 @@
 from flask import Blueprint, render_template, abort, send_file
 from ..models.database import db, Scan, Vulnerability
 import io
+import feedparser
 
 main_bp = Blueprint("main", __name__)
 
@@ -44,8 +45,19 @@ def reports():
 # Fix 9: added missing 'news' route — url_for('main.news') in base.html was crashing
 @main_bp.route("/news")
 def news():
-    return render_template("news.html")
-
+    articles = []
+    try:
+        feed = feedparser.parse("https://feeds.feedburner.com/TheHackersNews")
+        for entry in feed.entries[:6]:
+            articles.append({
+                "title": entry.title,
+                "summary": entry.get("summary", "")[:200] + "...",
+                "link": entry.link,
+                "date": entry.get("published", "")[:16]
+            })
+    except:
+        pass  # if it fails, articles stays empty, fallback shows
+    return render_template("news.html", articles=articles)
 
 
 

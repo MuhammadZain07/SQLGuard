@@ -1,131 +1,135 @@
 {% extends "base.html" %}
-{% block title %}Security News — SQLi Scanner{% endblock %}
-{% block breadcrumb %}Security News{% endblock %}
 
 {% block content %}
+<div style="padding: 1.5rem;">
 
-<div class="page-title">Security News</div>
-<div class="page-sub">Latest SQL injection and web security updates</div>
+  <!-- page heading -->
+  <div style="margin-bottom: 1.5rem;">
+    <h2 style="color: #e6edf3; margin: 0;">Security News</h2>
+    <p style="color: #8b949e; margin: 0.25rem 0 0;">Latest SQL injection and cybersecurity news from The Hacker News</p>
+  </div>
 
-<!-- 6 hardcoded news cards - works fully offline at viva -->
-<div class="news-grid">
+  <!-- CASE 1: Real news came from backend -->
+  {% if articles %}
 
-    <div class="news-card">
-        <span class="news-tag critical">Critical</span>
-        <div class="news-title">SQL Injection Remains Top Web Vulnerability in 2025</div>
-        <div class="news-body">OWASP reports that SQL injection continues to be one of the most dangerous vulnerabilities. Attackers use it to read, modify and delete database records without any authorization.</div>
-        <div class="news-footer">
-            <span class="news-source">OWASP</span>
-            <span class="news-date">May 2025</span>
-        </div>
+    <p style="color: #8b949e; font-size: 13px; margin-bottom: 1rem;">
+      Showing {{ articles|length }} live articles fetched from The Hacker News
+    </p>
+
+    {% for article in articles %}
+    <div style="
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    ">
+      <!-- source + date row -->
+      <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.5rem;">
+        <span style="
+          font-size: 11px;
+          font-weight: bold;
+          padding: 2px 8px;
+          border-radius: 4px;
+          background:#001a33;
+          color:#74c0fc;
+          border:1px solid #74c0fc;
+        ">LIVE</span>
+        <span style="color:#8b949e; font-size:13px;">The Hacker News</span>
+        <span style="color:#8b949e; font-size:13px; margin-left:auto;">{{ article.date }}</span>
+      </div>
+
+      <!-- title -->
+      <h5 style="color:#e6edf3; margin:0 0 0.5rem; font-size:15px; font-weight:600;">
+        {{ article.title }}
+      </h5>
+
+      <!-- summary -->
+      <p style="color:#8b949e; font-size:14px; margin:0 0 0.75rem; line-height:1.6;">
+        {{ article.summary }}
+      </p>
+
+      <!-- link -->
+      <a href="{{ article.link }}" target="_blank" style="color:#58a6ff; font-size:13px; text-decoration:none;">
+        Read full article →
+      </a>
+    </div>
+    {% endfor %}
+
+  <!-- CASE 2: No internet / feedparser failed — show hardcoded fallback -->
+  {% else %}
+
+    <p style="color:#8b949e; font-size:13px; margin-bottom:1rem;">
+      No live feed available — showing cached security news
+    </p>
+
+    <!-- hardcoded card 1 -->
+    <div style="background:#161b22; border:1px solid #30363d; border-radius:8px; padding:1.25rem; margin-bottom:1rem;">
+      <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.5rem;">
+        <span style="font-size:11px; font-weight:bold; padding:2px 8px; border-radius:4px; background:#3d0000; color:#ff6b6b; border:1px solid #ff6b6b;">CRITICAL</span>
+        <span style="color:#8b949e; font-size:13px;">The Hacker News</span>
+        <span style="color:#8b949e; font-size:13px; margin-left:auto;">May 2025</span>
+      </div>
+      <h5 style="color:#e6edf3; margin:0 0 0.5rem; font-size:15px; font-weight:600;">Critical SQL Injection Flaw Found in Popular CMS</h5>
+      <p style="color:#8b949e; font-size:14px; margin:0; line-height:1.6;">Security researchers discovered a critical SQL injection vulnerability affecting thousands of websites running a widely-used content management system.</p>
     </div>
 
-    <div class="news-card">
-        <span class="news-tag high">High</span>
-        <div class="news-title">Blind SQL Injection Attacks on the Rise</div>
-        <div class="news-body">Security researchers noticed an increase in blind SQL injection attacks where no error messages are shown. Attackers use boolean and time-based techniques to extract data silently.</div>
-        <div class="news-footer">
-            <span class="news-source">CVE Database</span>
-            <span class="news-date">April 2025</span>
-        </div>
+    <!-- hardcoded card 2 -->
+    <div style="background:#161b22; border:1px solid #30363d; border-radius:8px; padding:1.25rem; margin-bottom:1rem;">
+      <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.5rem;">
+        <span style="font-size:11px; font-weight:bold; padding:2px 8px; border-radius:4px; background:#2d1a00; color:#ffa94d; border:1px solid #ffa94d;">HIGH</span>
+        <span style="color:#8b949e; font-size:13px;">Security Week</span>
+        <span style="color:#8b949e; font-size:13px; margin-left:auto;">May 2025</span>
+      </div>
+      <h5 style="color:#e6edf3; margin:0 0 0.5rem; font-size:15px; font-weight:600;">Blind SQL Injection Bypasses WAF Filters</h5>
+      <p style="color:#8b949e; font-size:14px; margin:0; line-height:1.6;">Attackers are using new time-based blind SQL injection techniques to bypass modern Web Application Firewalls and extract sensitive database information.</p>
     </div>
 
-    <div class="news-card">
-        <span class="news-tag medium">Medium</span>
-        <div class="news-title">Parameterized Queries: Best Defense Against SQLi</div>
-        <div class="news-body">Security experts recommend using prepared statements and parameterized queries as the most effective way to prevent SQL injection. Never build SQL queries using string concatenation.</div>
-        <div class="news-footer">
-            <span class="news-source">SANS Institute</span>
-            <span class="news-date">March 2025</span>
-        </div>
+    <!-- hardcoded card 3 -->
+    <div style="background:#161b22; border:1px solid #30363d; border-radius:8px; padding:1.25rem; margin-bottom:1rem;">
+      <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.5rem;">
+        <span style="font-size:11px; font-weight:bold; padding:2px 8px; border-radius:4px; background:#2d1a00; color:#ffa94d; border:1px solid #ffa94d;">HIGH</span>
+        <span style="color:#8b949e; font-size:13px;">OWASP</span>
+        <span style="color:#8b949e; font-size:13px; margin-left:auto;">April 2025</span>
+      </div>
+      <h5 style="color:#e6edf3; margin:0 0 0.5rem; font-size:15px; font-weight:600;">OWASP Top 10 — SQL Injection Still #1 Threat</h5>
+      <p style="color:#8b949e; font-size:14px; margin:0; line-height:1.6;">OWASP confirmed injection attacks remain the most critical web application security risk in their latest updated guidelines.</p>
     </div>
 
-    <div class="news-card">
-        <span class="news-tag critical">Critical</span>
-        <div class="news-title">Major E-Commerce Site Breached via SQL Injection</div>
-        <div class="news-body">A large online retailer suffered a data breach exposing over 2 million customer records. Attackers exploited an unpatched SQL injection vulnerability in the login form.</div>
-        <div class="news-footer">
-            <span class="news-source">Security Weekly</span>
-            <span class="news-date">February 2025</span>
-        </div>
+    <!-- hardcoded card 4 -->
+    <div style="background:#161b22; border:1px solid #30363d; border-radius:8px; padding:1.25rem; margin-bottom:1rem;">
+      <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.5rem;">
+        <span style="font-size:11px; font-weight:bold; padding:2px 8px; border-radius:4px; background:#3d0000; color:#ff6b6b; border:1px solid #ff6b6b;">CRITICAL</span>
+        <span style="color:#8b949e; font-size:13px;">Dark Reading</span>
+        <span style="color:#8b949e; font-size:13px; margin-left:auto;">April 2025</span>
+      </div>
+      <h5 style="color:#e6edf3; margin:0 0 0.5rem; font-size:15px; font-weight:600;">Database Breach Exposes 2 Million Records via SQLi</h5>
+      <p style="color:#8b949e; font-size:14px; margin:0; line-height:1.6;">A major e-commerce platform suffered a data breach after attackers exploited an unpatched SQL injection vulnerability in their login endpoint.</p>
     </div>
 
-    <div class="news-card">
-        <span class="news-tag high">High</span>
-        <div class="news-title">Union-Based SQLi Used to Dump Full Databases</div>
-        <div class="news-body">Researchers demonstrated how union-based SQL injection can extract entire database contents in a single request. Input validation and WAF rules are critical countermeasures.</div>
-        <div class="news-footer">
-            <span class="news-source">Portswigger</span>
-            <span class="news-date">January 2025</span>
-        </div>
+    <!-- hardcoded card 5 -->
+    <div style="background:#161b22; border:1px solid #30363d; border-radius:8px; padding:1.25rem; margin-bottom:1rem;">
+      <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.5rem;">
+        <span style="font-size:11px; font-weight:bold; padding:2px 8px; border-radius:4px; background:#001a33; color:#74c0fc; border:1px solid #74c0fc;">INFO</span>
+        <span style="color:#8b949e; font-size:13px;">PortSwigger</span>
+        <span style="color:#8b949e; font-size:13px; margin-left:auto;">March 2025</span>
+      </div>
+      <h5 style="color:#e6edf3; margin:0 0 0.5rem; font-size:15px; font-weight:600;">How Parameterized Queries Prevent SQL Injection</h5>
+      <p style="color:#8b949e; font-size:14px; margin:0; line-height:1.6;">A detailed guide on why using prepared statements and parameterized queries is the most reliable defense against SQL injection attacks.</p>
     </div>
 
-    <div class="news-card">
-        <span class="news-tag low">Info</span>
-        <div class="news-title">How to Test Your App for SQL Injection</div>
-        <div class="news-body">Regular security testing using automated scanners helps developers find and fix SQL injection issues before attackers do. Combine automated testing with manual code review for best results.</div>
-        <div class="news-footer">
-            <span class="news-source">SQLi Scanner Guide</span>
-            <span class="news-date">2025</span>
-        </div>
+    <!-- hardcoded card 6 -->
+    <div style="background:#161b22; border:1px solid #30363d; border-radius:8px; padding:1.25rem; margin-bottom:1rem;">
+      <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.5rem;">
+        <span style="font-size:11px; font-weight:bold; padding:2px 8px; border-radius:4px; background:#2d2800; color:#ffd43b; border:1px solid #ffd43b;">MEDIUM</span>
+        <span style="color:#8b949e; font-size:13px;">Pen Test Partners</span>
+        <span style="color:#8b949e; font-size:13px; margin-left:auto;">March 2025</span>
+      </div>
+      <h5 style="color:#e6edf3; margin:0 0 0.5rem; font-size:15px; font-weight:600;">Error-Based SQLi in PHP Applications on the Rise</h5>
+      <p style="color:#8b949e; font-size:14px; margin:0; line-height:1.6;">Penetration testers report a growing number of error-based SQL injection vulnerabilities being found in legacy PHP web applications.</p>
     </div>
+
+  {% endif %}
 
 </div>
-
-<!-- news page CSS is written directly here - simple and easy -->
-<style>
-.page-title { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
-.page-sub   { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
-
-/* 3 cards per row */
-.news-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-}
-
-/* each card */
-.news-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-.news-card:hover { border-color: var(--text-muted); }
-
-/* tag badge */
-.news-tag {
-    display: inline-block;
-    font-size: 10px;
-    font-weight: 700;
-    padding: 3px 10px;
-    border-radius: 3px;
-    text-transform: uppercase;
-    width: fit-content;
-}
-.news-tag.critical { background: rgba(248,81,73,0.15);  color: #f85149; }
-.news-tag.high     { background: rgba(210,153,34,0.15); color: #d29922; }
-.news-tag.medium   { background: rgba(63,185,80,0.15);  color: #3fb950; }
-.news-tag.low      { background: rgba(88,166,255,0.15); color: #58a6ff; }
-
-/* headline */
-.news-title { font-size: 14px; font-weight: 700; color: var(--text-primary); line-height: 1.4; }
-
-/* description */
-.news-body  { font-size: 12px; color: var(--text-secondary); line-height: 1.7; flex: 1; }
-
-/* bottom row */
-.news-footer {
-    display: flex;
-    justify-content: space-between;
-    padding-top: 10px;
-    border-top: 1px solid var(--border-light);
-}
-.news-source { font-size: 11px; color: var(--accent-blue-light); font-weight: 600; }
-.news-date   { font-size: 11px; color: var(--text-muted); }
-</style>
-
 {% endblock %}
