@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Vulnerability Scanner{% endblock %}</title>
+    <title>{% block title %}SQLGuard Threat Intelligence Command{% endblock %}</title>
+
+<link rel="icon" type="image/png" href="{{ url_for('static', filename='images/favicon.png') }}">
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
-
     {% block extra_css %}{% endblock %}
     
     <script>
@@ -20,15 +21,16 @@
 
     <aside class="sidebar">
 
-        <div class="sidebar-logo">
-            <div class="logo-icon">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                </svg>
+        <div class="sidebar-branding" style="display: flex; align-items: center; gap: 12px; padding: 24px 16px; white-space: nowrap; overflow: hidden; border-bottom: none !important;">
+            <div class="branding-shield-box" style="background: transparent; box-shadow: none; display: flex; align-items: center; justify-content: center; width: 45px; height: 45px; flex-shrink: 0;">
+                <img src="{{ url_for('static', filename='images/brand-logo.png') }}" 
+                     alt="SQLGuard Logo" 
+                     style="width: 100%; height: 100%; object-fit: contain; display: block;">
             </div>
-            <div class="logo-text">
-                <span class="logo-name">SQL Guard</span>
-                <span class="logo-sub">PRO</span>
+            
+            <div class="branding-meta-text" style="display: flex; flex-direction: column; min-width: 0;">
+                <span class="branding-title-text" style="font-size: 18px; font-weight: 700; color: #ffffff; letter-spacing: -0.02em; line-height: 1.2;">SQLGuard</span>
+                <span class="branding-sub-tag" style="font-size: 13px; color: #64748b; font-weight: 500; margin-top: 2px;">Pro</span>
             </div>
         </div>
 
@@ -81,7 +83,7 @@
 
         <div class="topbar">
             <div class="breadcrumb-trail">
-                <span class="breadcrumb-root">SQL Guard</span>
+                <span class="breadcrumb-root">SQLGuard</span>
                 <span class="breadcrumb-sep">/</span>
                 <span class="breadcrumb-current">{% block breadcrumb %}Dashboard{% endblock %}</span>
             </div>
