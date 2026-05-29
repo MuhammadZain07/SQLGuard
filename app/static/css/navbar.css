@@ -1,0 +1,16 @@
+/* navbar.css - shared styles used across pages */
+
+/* page title used in history, news, reports pages */
+.page-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+/* subtitle under page title */
+.page-sub {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 24px;
+}

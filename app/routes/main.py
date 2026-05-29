@@ -38,7 +38,7 @@ def history():
 @main_bp.route("/reports")
 def reports():
     scans = Scan.query.order_by(Scan.created_at.desc()).all()
-    return render_template("reports.html", scans=scans)
+    return render_template("report.html", scans=scans)
 
 
 # Fix 9: added missing 'news' route — url_for('main.news') in base.html was crashing
