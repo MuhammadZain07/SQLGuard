@@ -14,12 +14,7 @@ logger = logging.getLogger(__name__)
 # -----------------------------------------------------------------
 # Helper: persist one vulnerability to the database
 # -----------------------------------------------------------------
-def _save_vulnerability(scan_id: int, result: dict) -> None:
-    """
-    Writes a single detected vulnerability to the Vulnerability table.
-    Fix 8: Skips duplicates — same (url, parameter, vuln_type) for the same scan.
-    """
-    # Fix 8 — duplicate check before inserting
+def _save_vulnerability(scan_id: int, result: dict) -> bool:
     existing = Vulnerability.query.filter_by(
         scan_id=scan_id,
         url=result.get("url", ""),
@@ -32,7 +27,7 @@ def _save_vulnerability(scan_id: int, result: dict) -> None:
             "Skipping duplicate vuln: %s param=%s type=%s",
             result.get("url"), result.get("parameter"), result.get("vuln_type"),
         )
-        return
+        return False         
 
     vuln = Vulnerability(
         scan_id=scan_id,
@@ -42,22 +37,18 @@ def _save_vulnerability(scan_id: int, result: dict) -> None:
         vuln_type=result.get("vuln_type", "Unknown"),
         severity=result.get("severity", "LOW"),
         payload=result.get("payload", ""),
-        response_snippet=result.get("response_snippet", "")[:500],  # cap length
+        response_snippet=result.get("response_snippet", "")[:500],
         recommendation=result.get("recommendation", ""),
         found_at=datetime.utcnow(),
     )
     db.session.add(vuln)
+    return True             
 
 
 # -----------------------------------------------------------------
 # Helper: fetch neutral baseline response sizes before injecting
 # -----------------------------------------------------------------
 def _build_baselines(injection_targets: list[dict], analyzer: ResponseAnalyzer) -> None:
-    """
-    Fix 5: Fetch a neutral response (param=test) for every unique (url, parameter)
-    pair BEFORE any payloads are sent. This gives the analyzer a true baseline
-    to compare against, eliminating false positives from boolean-based detection.
-    """
     seen: set[tuple] = set()
 
     for target in injection_targets:
@@ -103,13 +94,7 @@ def run_scan(self, scan_id: int, target_url: str) -> dict:
 
     Returns a summary dict that Celery stores as the task result.
     """
-    # Fix 1: tasks.py no longer calls create_app() — celery is imported from
-    # the app factory in app/__init__.py, so no circular import can occur.
-
-    # ----------------------------------------------------------
-    # Step 1 — Mark scan as running
-    # ----------------------------------------------------------
-    # Fix 7: use db.session.get() instead of deprecated Scan.query.get()
+  
     scan = db.session.get(Scan, scan_id)
     if not scan:
         logger.error("run_scan: Scan #%s not found in DB.", scan_id)
@@ -123,7 +108,7 @@ def run_scan(self, scan_id: int, target_url: str) -> dict:
         # ----------------------------------------------------------
         # Step 2 — Crawl the target
         # ----------------------------------------------------------
-        from flask import current_app  # safe here — we're inside app context via ContextTask
+        from flask import current_app 
 
         crawler = WebCrawler(
             target_url=target_url,
@@ -132,8 +117,7 @@ def run_scan(self, scan_id: int, target_url: str) -> dict:
         )
         injection_targets = crawler.crawl()  # list[dict]
 
-        # Fix 6: use crawler.visited (actual pages) not unique target URLs (which
-        # counts parameters, not pages — one page with 3 fields counted as 3).
+    
         scan.pages_crawled = len(crawler.visited)
         db.session.commit()
         logger.info(
@@ -150,10 +134,7 @@ def run_scan(self, scan_id: int, target_url: str) -> dict:
             db.session.commit()
             return {"scan_id": scan_id, "vulnerabilities_found": 0}
 
-        # ----------------------------------------------------------
-        # Step 3 — Build neutral baselines (Fix 5)
-        # Must happen BEFORE PayloadInjector fires any requests.
-        # ----------------------------------------------------------
+
         analyzer = ResponseAnalyzer()
         _build_baselines(injection_targets, analyzer)
 
@@ -176,8 +157,8 @@ def run_scan(self, scan_id: int, target_url: str) -> dict:
             analysis = analyzer.analyze(result)
             if analysis.get("is_vulnerable"):
                 combined = {**result, **analysis}
-                _save_vulnerability(scan_id, combined)  # Fix 8: deduplication inside
-                vuln_count += 1
+                if _save_vulnerability(scan_id, combined):
+                    vuln_count += 1
 
         db.session.commit()
         logger.info(
