@@ -45,13 +45,23 @@ def start_scan():
 
 @scan_bp.route("/scan-status/<int:scan_id>")
 def scan_status(scan_id):
-    # Fix 7: use db.session.get() instead of deprecated Scan.query.get_or_404()
     scan = db.session.get(Scan, scan_id)
     if scan is None:
         return jsonify({"error": "Scan not found"}), 404
 
+    from ..models.database import Vulnerability
+
+    critical = Vulnerability.query.filter_by(scan_id=scan_id, severity="CRITICAL").count()
+    high     = Vulnerability.query.filter_by(scan_id=scan_id, severity="HIGH").count()
+    medium   = Vulnerability.query.filter_by(scan_id=scan_id, severity="MEDIUM").count()
+    low      = Vulnerability.query.filter_by(scan_id=scan_id, severity="LOW").count()
+
     return jsonify({
         "status": scan.status,
         "vuln_count": scan.vuln_count,
-        "pages_crawled": scan.pages_crawled,  # bonus: useful for frontend progress display
+        "pages_crawled": scan.pages_crawled,
+        "critical": critical,
+        "high": high,
+        "medium": medium,
+        "low": low,
     })
