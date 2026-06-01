@@ -103,7 +103,7 @@ function pollStatus(scanId) {
 
                 // redirect to results after 2 seconds
                 setTimeout(() => {
-                    window.location.href = '/scan/' + scanId;
+                    window.location.href = '/scan/results/' + scanId;
                 }, 2000);
 
             } else if (data.status === 'failed') {
