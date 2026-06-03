@@ -1,4 +1,7 @@
 # app/routes/scan.py
+import ipaddress
+import socket
+
 from flask import Blueprint, request, jsonify
 from urllib.parse import urlparse
 from ..models.database import db, Scan
@@ -7,17 +10,56 @@ from ..tasks import run_scan
 scan_bp = Blueprint("scan", __name__)
 
 
+def _is_safe_host(hostname: str) -> bool:
+    """
+    Resolve hostname to its IP(s) and reject any that fall in
+    private / loopback / link-local / reserved ranges.
+    This blocks SSRF via http://127.0.0.1, http://192.168.x.x,
+    http://169.254.169.254 (AWS metadata), etc.
+    """
+    try:
+        # getaddrinfo returns all A/AAAA records
+        results = socket.getaddrinfo(hostname, None)
+    except socket.gaierror:
+        # Cannot resolve → treat as unsafe
+        return False
+
+    for result in results:
+        ip_str = result[4][0]
+        try:
+            ip = ipaddress.ip_address(ip_str)
+        except ValueError:
+            return False
+
+        if (
+            ip.is_private
+            or ip.is_loopback
+            or ip.is_link_local
+            or ip.is_multicast
+            or ip.is_reserved
+            or ip.is_unspecified
+        ):
+            return False
+
+    return True
+
+
 def _is_valid_url(url: str) -> bool:
     """
-    Fix 4: Validate URL before touching the database.
-    Accepts only http/https URLs with a non-empty host.
-    Rejects None, empty strings, javascript:, file://, etc.
+    Validate URL scheme/netloc AND block SSRF-prone hosts.
+    Accepts only http/https URLs with a non-empty, publicly-routable host.
     """
     if not url:
         return False
     try:
         parsed = urlparse(url)
-        return parsed.scheme in ("http", "https") and bool(parsed.netloc)
+        if parsed.scheme not in ("http", "https") or not parsed.netloc:
+            return False
+        # Strip port if present to get the bare hostname
+        hostname = parsed.hostname
+        if not hostname:
+            return False
+        return _is_safe_host(hostname)
     except Exception:
         return False
 
@@ -26,10 +68,12 @@ def _is_valid_url(url: str) -> bool:
 def start_scan():
     target_url = request.form.get("url", "").strip()
 
-    # Fix 4: reject bad URLs before any DB write happens
     if not _is_valid_url(target_url):
         return jsonify({
-            "error": "Invalid or missing URL. Must start with http:// or https://"
+            "error": (
+                "Invalid or unsafe URL. Must be a publicly-routable "
+                "http:// or https:// address."
+            )
         }), 400
 
     scan = Scan(target_url=target_url, status="pending")

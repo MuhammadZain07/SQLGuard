@@ -1,10 +1,11 @@
+# app/tasks.py
 import logging
-import requests as http_requests 
+import requests as http_requests
 from datetime import datetime
 
-from app import celery  
+from app import celery
 from app.models.database import db, Scan, Vulnerability
-from app.scanner.crawler import WebCrawler
+from app.scanner.crawler import WebCrawler, is_safe_url
 from app.scanner.injector import PayloadInjector
 from app.scanner.analyzer import ResponseAnalyzer
 
@@ -27,7 +28,7 @@ def _save_vulnerability(scan_id: int, result: dict) -> bool:
             "Skipping duplicate vuln: %s param=%s type=%s",
             result.get("url"), result.get("parameter"), result.get("vuln_type"),
         )
-        return False         
+        return False
 
     vuln = Vulnerability(
         scan_id=scan_id,
@@ -42,13 +43,23 @@ def _save_vulnerability(scan_id: int, result: dict) -> bool:
         found_at=datetime.utcnow(),
     )
     db.session.add(vuln)
-    return True             
+    return True
 
 
 # -----------------------------------------------------------------
 # Helper: fetch neutral baseline response sizes before injecting
 # -----------------------------------------------------------------
 def _build_baselines(injection_targets: list[dict], analyzer: ResponseAnalyzer) -> None:
+    """
+    Fetch a neutral (non-malicious) response for each unique (url, parameter)
+    pair so the boolean detector has a correct baseline to compare against.
+
+    Fix #B: use target["method"] and send form_data for POST targets.
+    A POST-only endpoint (e.g. login page) returns a completely different
+    response to a GET request — using the wrong method produced a wrong
+    baseline size and caused the boolean detector to flag every POST
+    injection as vulnerable.
+    """
     seen: set[tuple] = set()
 
     for target in injection_targets:
@@ -57,19 +68,41 @@ def _build_baselines(injection_targets: list[dict], analyzer: ResponseAnalyzer) 
             continue
         seen.add(key)
 
-        try:
-            r = http_requests.get(
-                target["url"],
-                params={target["parameter"]: "test"},
-                timeout=10,
+        # SSRF guard: never fetch a baseline for an internal/private address
+        if not is_safe_url(target["url"]):
+            logger.warning(
+                "SSRF guard: skipped baseline fetch for unsafe URL %s", target["url"]
             )
+            continue
+
+        method     = target.get("method", "GET").upper()
+        form_data  = dict(target.get("form_data", {}))
+        # Use a neutral value for the parameter under test
+        neutral_data = {**form_data, target["parameter"]: "test"}
+
+        try:
+            if method == "POST":
+                r = http_requests.post(
+                    target["url"],
+                    data=neutral_data,
+                    timeout=10,
+                    allow_redirects=True,
+                )
+            else:
+                r = http_requests.get(
+                    target["url"],
+                    params=neutral_data,
+                    timeout=10,
+                    allow_redirects=True,
+                )
+
             analyzer.set_baseline(target["url"], target["parameter"], len(r.text))
             logger.debug(
-                "Baseline set for %s param=%s size=%s",
-                target["url"], target["parameter"], len(r.text),
+                "Baseline set [%s] for %s param=%s size=%s",
+                method, target["url"], target["parameter"], len(r.text),
             )
+
         except Exception as exc:
-            # No baseline for this param — boolean check will be skipped for it
             logger.warning(
                 "Could not fetch baseline for %s param=%s: %s",
                 target["url"], target["parameter"], exc,
@@ -86,15 +119,12 @@ def run_scan(self, scan_id: int, target_url: str) -> dict:
 
         1. Mark scan as "running"
         2. Crawl the target website for forms / GET parameters
-        3. Build neutral baselines for boolean-based detection  (Fix 5)
+        3. Build neutral baselines for boolean-based detection
         4. Inject SQL payloads into every discovered parameter
         5. Analyse each response for vulnerabilities
-        6. Persist every unique finding to SQLite             (Fix 8)
+        6. Persist every unique finding to SQLite
         7. Mark scan as "completed" (or "failed" on error)
-
-    Returns a summary dict that Celery stores as the task result.
     """
-  
     scan = db.session.get(Scan, scan_id)
     if not scan:
         logger.error("run_scan: Scan #%s not found in DB.", scan_id)
@@ -105,19 +135,15 @@ def run_scan(self, scan_id: int, target_url: str) -> dict:
     logger.info("Scan #%s started for %s", scan_id, target_url)
 
     try:
-        # ----------------------------------------------------------
-        # Step 2 — Crawl the target
-        # ----------------------------------------------------------
-        from flask import current_app 
+        from flask import current_app
 
         crawler = WebCrawler(
             target_url=target_url,
             max_depth=current_app.config.get("MAX_DEPTH", 3),
             max_pages=current_app.config.get("MAX_PAGES", 30),
         )
-        injection_targets = crawler.crawl()  # list[dict]
+        injection_targets = crawler.crawl()
 
-    
         scan.pages_crawled = len(crawler.visited)
         db.session.commit()
         logger.info(
@@ -134,25 +160,17 @@ def run_scan(self, scan_id: int, target_url: str) -> dict:
             db.session.commit()
             return {"scan_id": scan_id, "vulnerabilities_found": 0}
 
-
         analyzer = ResponseAnalyzer()
         _build_baselines(injection_targets, analyzer)
 
-        # ----------------------------------------------------------
-        # Step 4 — Inject payloads
-        # ----------------------------------------------------------
         injector = PayloadInjector(targets=injection_targets)
-        injection_results = injector.inject()  # list[dict]
+        injection_results = injector.inject()
         logger.info(
             "Scan #%s: %s injection attempt(s) completed.",
             scan_id, len(injection_results),
         )
 
-        # ----------------------------------------------------------
-        # Step 5 & 6 — Analyse responses and save unique findings
-        # ----------------------------------------------------------
         vuln_count = 0
-
         for result in injection_results:
             analysis = analyzer.analyze(result)
             if analysis.get("is_vulnerable"):
@@ -165,9 +183,6 @@ def run_scan(self, scan_id: int, target_url: str) -> dict:
             "Scan #%s: %s vulnerability/vulnerabilities saved.", scan_id, vuln_count
         )
 
-        # ----------------------------------------------------------
-        # Step 7 — Mark completed
-        # ----------------------------------------------------------
         scan.status = "completed"
         scan.vuln_count = vuln_count
         db.session.commit()
@@ -181,5 +196,4 @@ def run_scan(self, scan_id: int, target_url: str) -> dict:
             db.session.commit()
         except Exception:
             db.session.rollback()
-
-        raise  # re-raise so Celery records the task as FAILURE
+        raise
