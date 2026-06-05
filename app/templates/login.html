@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In — SQLGuard</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/favicon.png') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: radial-gradient(circle at top right, rgba(31, 111, 235, 0.15), transparent 40%),
+                        radial-gradient(circle at bottom left, rgba(248, 81, 73, 0.08), transparent 45%),
+                        var(--bg-base);
+            padding: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Cybersecurity Grid Overlay */
+        body::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: linear-gradient(rgba(31, 111, 235, 0.035) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(31, 111, 235, 0.035) 1px, transparent 1px);
+            background-size: 28px 28px;
+            background-position: center;
+            mask-image: radial-gradient(circle at center, #000 45%, transparent 80%);
+            -webkit-mask-image: radial-gradient(circle at center, #000 45%, transparent 80%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* Animated Floating Background Orbs */
+        .bg-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(90px);
+            z-index: -1;
+            opacity: 0.13;
+            animation: float-orb 22s infinite alternate ease-in-out;
+            pointer-events: none;
+        }
+        .orb-1 {
+            width: 320px;
+            height: 320px;
+            background: var(--accent-blue);
+            top: 15%;
+            left: 20%;
+        }
+        .orb-2 {
+            width: 420px;
+            height: 420px;
+            background: var(--accent-red);
+            bottom: 15%;
+            right: 15%;
+            animation-delay: -5s;
+        }
+        @keyframes float-orb {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(60px, -80px) scale(1.1); }
+            100% { transform: translate(-30px, 40px) scale(0.9); }
+        }
+
+        .auth-container {
+            width: 100%;
+            max-width: 440px;
+            z-index: 10;
+        }
+
+        /* Logo Animation */
+        .auth-logo {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .auth-logo img {
+            width: 44px;
+            height: 44px;
+            object-fit: contain;
+            margin-bottom: 8px;
+            animation: logo-glow 3s ease-in-out infinite alternate;
+        }
+        @keyframes logo-glow {
+            0% {
+                filter: drop-shadow(0 0 8px rgba(31, 111, 235, 0.3));
+                transform: scale(1);
+            }
+            100% {
+                filter: drop-shadow(0 0 18px rgba(31, 111, 235, 0.6));
+                transform: scale(1.05);
+            }
+        }
+
+        .auth-logo h1 {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.03em;
+            margin: 0;
+        }
+
+        /* Card Entrance & Frosted Glassmorphism Refinements */
+        .auth-card {
+            background: rgba(22, 27, 34, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 32px;
+            box-shadow: var(--shadow-dropdown), 0 20px 40px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            transition: border-color 0.25s, box-shadow 0.25s, background-color 0.25s;
+            animation: card-entrance 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            transform: translateY(24px);
+        }
+        [data-theme="light"] .auth-card {
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+        }
+        @keyframes card-entrance {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .auth-card:hover {
+            border-color: rgba(31, 111, 235, 0.25);
+            box-shadow: var(--shadow-dropdown), 0 24px 48px rgba(31, 111, 235, 0.08);
+        }
+
+        .auth-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-light);
+            margin-bottom: 28px;
+        }
+
+        .auth-tab {
+            flex: 1;
+            text-align: center;
+            padding: 10px 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.25s ease;
+        }
+
+        .auth-tab:hover {
+            color: var(--text-primary);
+        }
+
+        .auth-tab.active {
+            color: var(--accent-blue-light);
+            border-bottom-color: var(--accent-blue);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            background: var(--bg-base);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            padding: 10px 14px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+        }
+
+        .form-input:focus {
+            background-color: var(--bg-card);
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(31, 111, 235, 0.15);
+        }
+
+        /* Password Visibility Toggle */
+        .input-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        .input-wrapper .form-input {
+            padding-right: 42px;
+        }
+        .password-toggle {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px;
+            border-radius: 4px;
+            transition: color 0.15s, background-color 0.15s;
+        }
+        .password-toggle:hover {
+            color: var(--text-primary);
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        [data-theme="light"] .password-toggle:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        /* Primary Button & Shimmer Sweeper Hover Effect */
+        .auth-btn {
+            width: 100%;
+            background: var(--accent-blue);
+            border: none;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 11px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.15s, transform 0.1s, opacity 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .auth-btn::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+            transform: skewX(-20deg);
+            pointer-events: none;
+        }
+
+        .auth-btn:hover::after {
+            left: 150%;
+            transition: left 0.65s ease-in-out;
+        }
+
+        .auth-btn:hover {
+            background: var(--accent-blue-light);
+        }
+
+        .auth-btn:active {
+            transform: scale(0.98);
+        }
+
+        .alert {
+            font-size: 13px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            padding: 10px 14px;
+            animation: alert-shake 0.4s ease-in-out;
+        }
+        @keyframes alert-shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+
+        /* Smooth Form Switching */
+        .auth-card form {
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+    </style>
+    <!-- Apply theme before render to prevent flash -->
+    <script>
+        (function(){
+            if (localStorage.getItem('app-ui-theme') === 'light')
+                document.documentElement.setAttribute('data-theme','light');
+        })();
+    </script>
+</head>
+<body>
+
+<!-- Background Floating Orbs -->
+<div class="bg-orb orb-1"></div>
+<div class="bg-orb orb-2"></div>
+
+<div class="auth-container">
+    <div class="auth-logo">
+        <img src="{{ url_for('static', filename='images/brand-logo.png') }}" alt="SQLGuard">
+        <h1>SQLGuard</h1>
+    </div>
+
+    <!-- Flash Messages (filtered to remove logout notice) -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for cat, msg in messages %}
+                {% if msg != "You have been signed out." and msg != "you have been logged out" %}
+                    <div class="alert alert-{{ 'danger' if cat == 'error' else cat }} alert-dismissible fade show" role="alert">
+                        {{ msg }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="auth-card">
+        <div class="auth-tabs">
+            <div class="auth-tab active" id="tab-signin" onclick="switchMode('signin')">Sign In</div>
+            <div class="auth-tab" id="tab-signup" onclick="switchMode('signup')">Sign Up</div>
+        </div>
+
+        <!-- Sign In Form -->
+        <form id="form-signin" action="{{ url_for('auth.login') }}" method="POST">
+            <div class="form-group">
+                <label class="form-label" for="signin-username">Username</label>
+                <input type="text" id="signin-username" name="username" class="form-input" required autocomplete="username" placeholder="Enter username">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="signin-password">Password</label>
+                <div class="input-wrapper">
+                    <input type="password" id="signin-password" name="password" class="form-input" required autocomplete="current-password" placeholder="••••••••">
+                    <button type="button" class="password-toggle" onclick="togglePasswordVisibility('signin-password', this)" title="Toggle password visibility">
+                        <svg class="eye-show" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        <svg class="eye-hide" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                            <line x1="1" y1="1" x2="23" y2="23"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <button type="submit" class="auth-btn">
+                Sign In
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                </svg>
+            </button>
+        </form>
+
+        <!-- Sign Up Form -->
+        <form id="form-signup" action="{{ url_for('auth.signup') }}" method="POST" style="display: none; opacity: 0; transform: translateY(10px);">
+            <div class="form-group">
+                <label class="form-label" for="signup-username">Choose Username</label>
+                <input type="text" id="signup-username" name="username" class="form-input" required autocomplete="username" placeholder="Choose username">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="signup-password">Password</label>
+                <div class="input-wrapper">
+                    <input type="password" id="signup-password" name="password" class="form-input" required autocomplete="new-password" placeholder="••••••••">
+                    <button type="button" class="password-toggle" onclick="togglePasswordVisibility('signup-password', this)" title="Toggle password visibility">
+                        <svg class="eye-show" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        <svg class="eye-hide" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                            <line x1="1" y1="1" x2="23" y2="23"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="signup-confirm">Confirm Password</label>
+                <div class="input-wrapper">
+                    <input type="password" id="signup-confirm" name="confirm_password" class="form-input" required autocomplete="new-password" placeholder="••••••••">
+                    <button type="button" class="password-toggle" onclick="togglePasswordVisibility('signup-confirm', this)" title="Toggle password visibility">
+                        <svg class="eye-show" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        <svg class="eye-hide" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                            <line x1="1" y1="1" x2="23" y2="23"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <button type="submit" class="auth-btn">
+                Create Account
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="8.5" cy="7" r="4"/>
+                    <line x1="20" y1="8" x2="20" y2="14"/>
+                    <line x1="23" y1="11" x2="17" y2="11"/>
+                </svg>
+            </button>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function togglePasswordVisibility(inputId, btn) {
+        const input = document.getElementById(inputId);
+        const eyeShow = btn.querySelector('.eye-show');
+        const eyeHide = btn.querySelector('.eye-hide');
+        
+        if (input.type === 'password') {
+            input.type = 'text';
+            eyeShow.style.display = 'none';
+            eyeHide.style.display = 'block';
+        } else {
+            input.type = 'password';
+            eyeShow.style.display = 'block';
+            eyeHide.style.display = 'none';
+        }
+    }
+
+    function switchMode(mode) {
+        const tabSignin = document.getElementById('tab-signin');
+        const tabSignup = document.getElementById('tab-signup');
+        const formSignin = document.getElementById('form-signin');
+        const formSignup = document.getElementById('form-signup');
+
+        if (mode === 'signin') {
+            tabSignin.classList.add('active');
+            tabSignup.classList.remove('active');
+            
+            formSignup.style.opacity = '0';
+            formSignup.style.transform = 'translateY(10px)';
+            setTimeout(() => {
+                formSignup.style.display = 'none';
+                formSignin.style.display = 'block';
+                setTimeout(() => {
+                    formSignin.style.opacity = '1';
+                    formSignin.style.transform = 'translateY(0)';
+                }, 20);
+            }, 200);
+            
+            document.title = "Sign In — SQLGuard";
+        } else {
+            tabSignup.classList.add('active');
+            tabSignin.classList.remove('active');
+            
+            formSignin.style.opacity = '0';
+            formSignin.style.transform = 'translateY(10px)';
+            setTimeout(() => {
+                formSignin.style.display = 'none';
+                formSignup.style.display = 'block';
+                setTimeout(() => {
+                    formSignup.style.opacity = '1';
+                    formSignup.style.transform = 'translateY(0)';
+                }, 20);
+            }, 200);
+            
+            document.title = "Sign Up — SQLGuard";
+        }
+    }
+</script>
+</body>
+</html>
