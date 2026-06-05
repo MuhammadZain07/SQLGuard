@@ -57,25 +57,42 @@ class PayloadInjector:
     # and getting the scanner's IP blocked.
     REQUEST_DELAY_S = 0.15
 
-    def __init__(self, targets: list[dict]):
+    def __init__(self, targets: list[dict], mode: str = "normal"):
         self.targets = targets
+        self.mode = mode.lower()
         self.session = requests.Session()
         self.session.headers.update({
             "User-Agent": (
                 "Mozilla/5.0 (compatible; SQLiScanner/1.0; "
-                "+https://github.com/MuhammadZain07/SQLGuard"
+                "+https://github.com/MuhammadZain07/SQLGuard)"
             )
         })
+        
+        # Adjust delay and timeout configuration based on mode
+        if self.mode == "aggressive":
+            self.REQUEST_DELAY_S = 0.02
+            self.REQUEST_TIMEOUT = 10
+        else:
+            self.REQUEST_DELAY_S = 0.15
+            self.REQUEST_TIMEOUT = 15
 
     # ------------------------------------------------------------------
     # Public entry point
     # ------------------------------------------------------------------
 
-    def inject(self) -> list[dict]:
+    def inject(self, confirmed_vulns: set | None = None) -> list[dict]:
         """
         Run every payload against every target.
         Returns a flat list of result dicts.
+
+        If *confirmed_vulns* is provided it must be a set of
+        (url, parameter) tuples.  Targets whose (url, parameter) is
+        already in the set are skipped entirely, and newly confirmed
+        pairs can be added by the caller between iterations.
         """
+        if confirmed_vulns is None:
+            confirmed_vulns = set()
+
         results: list[dict] = []
         total = len(self.targets) * len(ALL_PAYLOADS)
         logger.info(
@@ -84,8 +101,12 @@ class PayloadInjector:
         )
 
         for target in self.targets:
+            target_key = (target["url"], target["parameter"])
             for payload_info in ALL_PAYLOADS:
-                result = self._send_request(target, payload_info)
+                # Early exit: skip if this (url, parameter) is already confirmed
+                if target_key in confirmed_vulns:
+                    break
+                result = self.send_request(target, payload_info)
                 if result:
                     results.append(result)
 
@@ -96,7 +117,7 @@ class PayloadInjector:
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _send_request(self, target: dict, payload_info: dict) -> dict | None:
+    def send_request(self, target: dict, payload_info: dict) -> dict | None:
         """Fire one payload at one target. Returns a result dict or None on error."""
         url         = target["url"]
         method      = target["method"].upper()
@@ -114,20 +135,20 @@ class PayloadInjector:
                 response = self.session.post(
                     url,
                     data=injected_data,
-                    timeout=self.REQUEST_TIMEOUT,  # Fix 11: now 15s
+                    timeout=self.REQUEST_TIMEOUT,
                     allow_redirects=True,
                 )
             else:
                 response = self.session.get(
                     url,
                     params=injected_data,
-                    timeout=self.REQUEST_TIMEOUT,  # Fix 11: now 15s
+                    timeout=self.REQUEST_TIMEOUT,
                     allow_redirects=True,
                 )
 
             elapsed_ms = int((time.monotonic() - start) * 1000)
 
-            # Fix 10: throttle after every successful request
+            # throttle after every successful request
             time.sleep(self.REQUEST_DELAY_S)
 
             return {
@@ -146,7 +167,7 @@ class PayloadInjector:
             elapsed_ms = int((time.monotonic() - start) * 1000)
             logger.debug("Timeout for %s [%s=%s]", url, parameter, payload[:30])
 
-            # Fix 10: throttle on timeout too
+            # throttle on timeout too
             time.sleep(self.REQUEST_DELAY_S)
 
             # Timeouts are meaningful for time-based detection — return them
@@ -166,7 +187,7 @@ class PayloadInjector:
         except requests.RequestException as exc:
             logger.warning("Request error for %s: %s", url, exc)
 
-            # Fix 10: throttle even on hard errors so we don't spam the target
+            # throttle even on hard errors so we don't spam the target
             time.sleep(self.REQUEST_DELAY_S)
 
             return None

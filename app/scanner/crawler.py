@@ -93,7 +93,7 @@ class WebCrawler:
         self.session.headers.update({
             "User-Agent": (
                 "Mozilla/5.0 (compatible; SQLiScanner/1.0; "
-                "+https://github.com/MuhammadZain07/SQLGuard"
+                "+https://github.com/MuhammadZain07/SQLGuard)"
             )
         })
 
@@ -106,6 +106,17 @@ class WebCrawler:
         logger.info("Crawling started: %s (depth=%s, pages=%s)",
                     self.target_url, self.max_depth, self.max_pages)
         self._crawl_page(self.target_url, depth=0)
+
+        # Deduplicate targets by (url, method, parameter)
+        seen: set[tuple] = set()
+        unique_targets: list[dict] = []
+        for t in self.targets:
+            key = (t["url"], t["method"], t["parameter"])
+            if key not in seen:
+                seen.add(key)
+                unique_targets.append(t)
+        self.targets = unique_targets
+
         logger.info("Crawling finished. %s target(s) found across %s page(s).",
                     len(self.targets), len(self.visited))
         return self.targets
@@ -193,7 +204,16 @@ class WebCrawler:
                 name = tag.get("name")
                 if not name:
                     continue
-                default = tag.get("value", tag.get("placeholder", "test"))
+                # <select> doesn't have a value attr; extract from child <option>
+                if tag.name == "select":
+                    selected = tag.find("option", selected=True)
+                    if selected:
+                        default = selected.get("value", selected.string or "test")
+                    else:
+                        first_opt = tag.find("option")
+                        default = first_opt.get("value", first_opt.string or "test") if first_opt else "test"
+                else:
+                    default = tag.get("value", tag.get("placeholder", "test"))
                 form_data[name] = default or "test"
 
             if not form_data:

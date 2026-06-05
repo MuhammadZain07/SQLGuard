@@ -77,9 +77,15 @@ SEVERITY_META: dict[str, dict] = {
 # Response-size difference threshold for boolean detection (bytes)
 BOOLEAN_SIZE_THRESHOLD = 50
 
+# Marker string for union-based detection
+UNION_MARKER = "SQLGUARD_UNION_MARKER_9x2k"
+
 # Fix 11: increased from 4500ms → 4800ms to stay safely below the new
 # 15s REQUEST_TIMEOUT while still reliably catching 5s time-based payloads.
+# Note: when a per-target baseline response time is available, time-based
+# detection uses baseline_time + TIME_OVER_BASELINE_MS instead.
 TIME_THRESHOLD_MS = 4800
+TIME_OVER_BASELINE_MS = 4000
 
 
 class ResponseAnalyzer:
@@ -102,18 +108,29 @@ class ResponseAnalyzer:
         # Fix 5: Key: (url, parameter) → size of response with NEUTRAL input.
         # Populated via set_baseline() in tasks.py before injection starts.
         self._baseline: dict[tuple, int] = {}
+        # Baseline response time in ms, used for dynamic time-based threshold.
+        self._baseline_time: dict[tuple, int] = {}
 
     # ------------------------------------------------------------------
     # Fix 5: Public method to register a neutral baseline
     # ------------------------------------------------------------------
 
-    def set_baseline(self, url: str, parameter: str, neutral_response_size: int) -> None:
+    def set_baseline(
+        self,
+        url: str,
+        parameter: str,
+        neutral_response_size: int,
+        neutral_response_time_ms: int = 0,
+    ) -> None:
         """
-        Register the response size for a neutral (non-malicious) request.
-        Must be called once per (url, parameter) BEFORE analyze() is called
-        for that pair, otherwise boolean-based detection is skipped.
+        Register the response size (and optionally response time) for a
+        neutral (non-malicious) request.  Must be called once per
+        (url, parameter) BEFORE analyze() is called for that pair,
+        otherwise boolean-based detection is skipped.
         """
         self._baseline[(url, parameter)] = neutral_response_size
+        if neutral_response_time_ms:
+            self._baseline_time[(url, parameter)] = neutral_response_time_ms
 
     # ------------------------------------------------------------------
     # Public entry point
@@ -142,10 +159,11 @@ class ResponseAnalyzer:
         cache_key     = (url, parameter)
         response_size = len(response_text)
 
-        # Run the three detectors in priority order
+        # Run the detectors in priority order
         error_result   = self._check_error_based(response_text)
         boolean_result = self._check_boolean_based(cache_key, response_size)
-        time_result    = self._check_time_based(response_ms, timed_out)
+        time_result    = self._check_time_based(response_ms, timed_out, cache_key)
+        union_result   = self._check_union_based(response_text)
 
         # Fix 5: baseline is set externally via set_baseline() and never
         # overwritten here — removing the old self._baseline[cache_key] = response_size
@@ -157,6 +175,12 @@ class ResponseAnalyzer:
             vuln_type = "Error-Based"
             db_type   = error_result["db_type"]
             logger.info("VULN [Error-Based/%s] %s param=%s", db_type, url, parameter)
+
+        elif union_result["detected"]:
+            severity  = "HIGH"
+            vuln_type = "Union-Based"
+            db_type   = ""
+            logger.info("VULN [Union-Based] %s param=%s", url, parameter)
 
         elif time_result["detected"]:
             severity  = "HIGH"
@@ -220,8 +244,89 @@ class ResponseAnalyzer:
         delta = abs(current_size - self._baseline[cache_key])
         return {"detected": delta >= BOOLEAN_SIZE_THRESHOLD, "delta": delta}
 
-    def _check_time_based(self, response_ms: int, timed_out: bool) -> dict:
-        """Flag responses that took longer than the threshold (time-based blind)."""
-        # Fix 11: TIME_THRESHOLD_MS is now 4800 instead of 4500
-        detected = timed_out or (response_ms >= TIME_THRESHOLD_MS)
+    def analyze_boolean_pair(self, true_result: dict, false_result: dict) -> dict:
+        """
+        Analyse a TRUE/FALSE boolean payload pair.
+
+        Only flags the parameter as vulnerable when BOTH conditions hold:
+          1. true_result response size is SIMILAR to the baseline (delta < threshold)
+          2. false_result response size DIFFERS from the baseline (delta >= threshold)
+
+        This dramatically reduces false positives compared to checking a
+        single response against the baseline.
+        """
+        url       = true_result.get("url", "")
+        parameter = true_result.get("parameter", "")
+        cache_key = (url, parameter)
+
+        if cache_key not in self._baseline:
+            return {
+                "is_vulnerable": False,
+                "vuln_type": "",
+                "severity": "",
+                "cvss_score": 0.0,
+                "recommendation": "",
+                "response_snippet": (true_result.get("response_text", "") or "")[:300],
+                "db_type": "",
+            }
+
+        baseline_size = self._baseline[cache_key]
+        true_size  = len(true_result.get("response_text", "") or "")
+        false_size = len(false_result.get("response_text", "") or "")
+
+        true_delta  = abs(true_size - baseline_size)
+        false_delta = abs(false_size - baseline_size)
+
+        # True-condition should match baseline; false-condition should differ
+        detected = (true_delta < BOOLEAN_SIZE_THRESHOLD and
+                    false_delta >= BOOLEAN_SIZE_THRESHOLD)
+
+        if detected:
+            logger.info(
+                "VULN [Boolean-Based/Pair] %s param=%s "
+                "(true_Δ=%s, false_Δ=%s)",
+                url, parameter, true_delta, false_delta,
+            )
+            meta = SEVERITY_META["MEDIUM"]
+            return {
+                "is_vulnerable": True,
+                "vuln_type": "Boolean-Based",
+                "severity": "MEDIUM",
+                "cvss_score": meta["cvss_score"],
+                "recommendation": meta["recommendation"],
+                "response_snippet": (true_result.get("response_text", "") or "")[:300],
+                "db_type": "",
+            }
+
+        return {
+            "is_vulnerable": False,
+            "vuln_type": "",
+            "severity": "",
+            "cvss_score": 0.0,
+            "recommendation": "",
+            "response_snippet": (true_result.get("response_text", "") or "")[:300],
+            "db_type": "",
+        }
+
+    def _check_union_based(self, response_text: str) -> dict:
+        """Check if the union marker string appears in the response text."""
+        detected = UNION_MARKER in response_text
+        return {"detected": detected}
+
+    def _check_time_based(self, response_ms: int, timed_out: bool,
+                          cache_key: tuple | None = None) -> dict:
+        """Flag responses that took longer than the threshold (time-based blind).
+
+        When a per-target baseline response time is available (set via
+        set_baseline), the threshold is baseline_time + TIME_OVER_BASELINE_MS
+        instead of the fixed TIME_THRESHOLD_MS.
+        """
+        # Dynamic threshold when baseline time is available
+        if cache_key and cache_key in self._baseline_time:
+            threshold = self._baseline_time[cache_key] + TIME_OVER_BASELINE_MS
+        else:
+            # Fix 11: TIME_THRESHOLD_MS is now 4800 instead of 4500
+            threshold = TIME_THRESHOLD_MS
+
+        detected = timed_out or (response_ms >= threshold)
         return {"detected": detected}

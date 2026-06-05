@@ -1,12 +1,13 @@
 # app/tasks.py
 import logging
+import time
 import requests as http_requests
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app import celery
 from app.models.database import db, Scan, Vulnerability
 from app.scanner.crawler import WebCrawler, is_safe_url
-from app.scanner.injector import PayloadInjector
+from app.scanner.injector import PayloadInjector, PAYLOADS, ALL_PAYLOADS
 from app.scanner.analyzer import ResponseAnalyzer
 
 logger = logging.getLogger(__name__)
@@ -40,7 +41,7 @@ def _save_vulnerability(scan_id: int, result: dict) -> bool:
         payload=result.get("payload", ""),
         response_snippet=result.get("response_snippet", "")[:500],
         recommendation=result.get("recommendation", ""),
-        found_at=datetime.utcnow(),
+        found_at=datetime.now(timezone.utc),
     )
     db.session.add(vuln)
     return True
@@ -81,6 +82,7 @@ def _build_baselines(injection_targets: list[dict], analyzer: ResponseAnalyzer) 
         neutral_data = {**form_data, target["parameter"]: "test"}
 
         try:
+            start = time.monotonic()
             if method == "POST":
                 r = http_requests.post(
                     target["url"],
@@ -95,11 +97,16 @@ def _build_baselines(injection_targets: list[dict], analyzer: ResponseAnalyzer) 
                     timeout=10,
                     allow_redirects=True,
                 )
+            elapsed_ms = int((time.monotonic() - start) * 1000)
 
-            analyzer.set_baseline(target["url"], target["parameter"], len(r.text))
+            analyzer.set_baseline(
+                target["url"], target["parameter"],
+                len(r.text), neutral_response_time_ms=elapsed_ms,
+            )
             logger.debug(
-                "Baseline set [%s] for %s param=%s size=%s",
-                method, target["url"], target["parameter"], len(r.text),
+                "Baseline set [%s] for %s param=%s size=%s time=%sms",
+                method, target["url"], target["parameter"],
+                len(r.text), elapsed_ms,
             )
 
         except Exception as exc:
@@ -113,7 +120,7 @@ def _build_baselines(injection_targets: list[dict], analyzer: ResponseAnalyzer) 
 # Main Celery task
 # -----------------------------------------------------------------
 @celery.task(bind=True, max_retries=0)
-def run_scan(self, scan_id: int, target_url: str) -> dict:
+def run_scan(self, scan_id: int, target_url: str, mode: str = "normal") -> dict:
     """
     Background task that runs the full SQL-injection scan pipeline:
 
@@ -132,17 +139,29 @@ def run_scan(self, scan_id: int, target_url: str) -> dict:
 
     scan.status = "running"
     db.session.commit()
-    logger.info("Scan #%s started for %s", scan_id, target_url)
+    logger.info("Scan #%s started for %s in %s mode", scan_id, target_url, mode)
 
     try:
-        from flask import current_app
+        # Determine crawl limits based on mode
+        if mode == "aggressive":
+            max_depth = 3
+            max_pages = 30
+        else:
+            max_depth = 2
+            max_pages = 10
 
         crawler = WebCrawler(
             target_url=target_url,
-            max_depth=current_app.config.get("MAX_DEPTH", 3),
-            max_pages=current_app.config.get("MAX_PAGES", 30),
+            max_depth=max_depth,
+            max_pages=max_pages,
         )
         injection_targets = crawler.crawl()
+
+        # Check for early cancel
+        db.session.expire(scan)
+        if scan.status in ("failed", "stopped"):
+            logger.info("Scan #%s cancelled during crawling phase.", scan_id)
+            return {"scan_id": scan_id, "status": "stopped"}
 
         scan.pages_crawled = len(crawler.visited)
         db.session.commit()
@@ -163,22 +182,107 @@ def run_scan(self, scan_id: int, target_url: str) -> dict:
         analyzer = ResponseAnalyzer()
         _build_baselines(injection_targets, analyzer)
 
-        injector = PayloadInjector(targets=injection_targets)
-        injection_results = injector.inject()
-        logger.info(
-            "Scan #%s: %s injection attempt(s) completed.",
-            scan_id, len(injection_results),
-        )
+        # Check for early cancel again
+        db.session.expire(scan)
+        if scan.status in ("failed", "stopped"):
+            logger.info("Scan #%s cancelled after baseline collection.", scan_id)
+            return {"scan_id": scan_id, "status": "stopped"}
+
+        injector = PayloadInjector(targets=injection_targets, mode=mode)
+
+        # Track confirmed vulnerable (url, parameter) pairs for early exit
+        confirmed_vulns: set[tuple] = set()
+
+        # Pre-load boolean payload pairs info
+        boolean_payloads = PAYLOADS.get("boolean_based", [])
+        boolean_false_map: dict[str, str] = {}
+        for i in range(0, len(boolean_payloads) - 1, 2):
+            boolean_false_map[boolean_payloads[i]] = boolean_payloads[i + 1]
+
+        # Get non-boolean payloads
+        non_boolean_payloads = [p for p in ALL_PAYLOADS if p["attack_type"] != "boolean_based"]
+
+        # Filter payloads for Normal mode
+        if mode == "normal":
+            filtered = []
+            for at in ["error_based", "time_based", "union_based"]:
+                subset = [p for p in non_boolean_payloads if p["attack_type"] == at]
+                filtered.extend(subset[:2])
+            payload_pool = filtered
+        else:
+            payload_pool = non_boolean_payloads
 
         vuln_count = 0
-        for result in injection_results:
-            analysis = analyzer.analyze(result)
-            if analysis.get("is_vulnerable"):
-                combined = {**result, **analysis}
-                if _save_vulnerability(scan_id, combined):
-                    vuln_count += 1
 
-        db.session.commit()
+        # Inject and analyze target-by-target (and payload-by-payload) on the fly
+        for target in injection_targets:
+            target_key = (target["url"], target["parameter"])
+
+            # Check if scan has been cancelled
+            db.session.expire(scan)
+            if scan.status in ("failed", "stopped"):
+                logger.info("Scan #%s cancelled/stopped during injection phase.", scan_id)
+                return {"scan_id": scan_id, "status": "stopped"}
+
+            if target_key in confirmed_vulns:
+                continue
+
+            target_vulnerable = False
+
+            # 1. Test error, union, time based payloads
+            for payload_info in payload_pool:
+                # Check cancellation in the inner loop too
+                db.session.expire(scan)
+                if scan.status in ("failed", "stopped"):
+                    logger.info("Scan #%s cancelled/stopped during payload run.", scan_id)
+                    return {"scan_id": scan_id, "status": "stopped"}
+
+                result = injector.send_request(target, payload_info)
+                if result:
+                    analysis = analyzer.analyze(result)
+                    if analysis.get("is_vulnerable"):
+                        combined = {**result, **analysis}
+                        if _save_vulnerability(scan_id, combined):
+                            vuln_count += 1
+                            confirmed_vulns.add(target_key)
+                            target_vulnerable = True
+                            db.session.commit()
+                        break # Early exit: skip other payloads for this target
+
+            if target_vulnerable:
+                continue
+
+            # 2. Test boolean based payloads (run in TRUE/FALSE pairs)
+            if mode == "normal":
+                boolean_pairs = list(boolean_false_map.items())[:1]
+            else:
+                boolean_pairs = list(boolean_false_map.items())
+
+            for true_pl, false_pl in boolean_pairs:
+                db.session.expire(scan)
+                if scan.status in ("failed", "stopped"):
+                    logger.info("Scan #%s cancelled/stopped during boolean pairing.", scan_id)
+                    return {"scan_id": scan_id, "status": "stopped"}
+
+                true_info = {"attack_type": "boolean_based", "payload": true_pl}
+                true_result = injector.send_request(target, true_info)
+                if not true_result:
+                    continue
+
+                false_info = {"attack_type": "boolean_based", "payload": false_pl}
+                false_result = injector.send_request(target, false_info)
+                if not false_result:
+                    continue
+
+                analysis = analyzer.analyze_boolean_pair(true_result, false_result)
+                if analysis.get("is_vulnerable"):
+                    combined = {**true_result, **analysis}
+                    if _save_vulnerability(scan_id, combined):
+                        vuln_count += 1
+                        confirmed_vulns.add(target_key)
+                        db.session.commit()
+                    break # Early exit: skip other boolean pairs for this target
+
         logger.info(
             "Scan #%s: %s vulnerability/vulnerabilities saved.", scan_id, vuln_count
         )
