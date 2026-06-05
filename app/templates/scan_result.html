@@ -65,7 +65,7 @@
         </div>
     </div>
 
-    <!-- Right: Scan Details -->
+    <!-- Right: Scan Details (Status removed) -->
     <div class="card-dark details-panel">
         <div class="details-title">Scan Details</div>
         <div class="detail-row">
@@ -77,17 +77,6 @@
             </span>
             <span class="detail-key">Target</span>
             <span class="detail-val url-truncate">{{ scan.target_url }}</span>
-        </div>
-        <div class="detail-row">
-            <span class="detail-icon">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                </svg>
-            </span>
-            <span class="detail-key">Status</span>
-            <span class="detail-val">
-                <span class="status-badge status-{{ scan.status }}">{{ scan.status | upper }}</span>
-            </span>
         </div>
         <div class="detail-row">
             <span class="detail-icon">
@@ -147,13 +136,13 @@
             <button class="filter-btn high-btn" onclick="filterVulns('HIGH', this)">High</button>
             <button class="filter-btn medium-btn" onclick="filterVulns('MEDIUM', this)">Medium</button>
             <button class="filter-btn low-btn" onclick="filterVulns('LOW', this)">Low</button>
-            <a href="{{ url_for('main.download_report', scan_id=scan.id)}}" class="export-btn">
+            <button class="export-btn" onclick="downloadPDF()">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                     <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
                 </svg>
                 Export PDF
-            </a>
+            </button>
         </div>
     </div>
 
@@ -224,6 +213,41 @@ function filterVulns(severity, btn) {
     document.querySelectorAll('.vuln-item').forEach(item => {
         item.style.display = (severity === 'all' || item.dataset.severity === severity) ? 'block' : 'none';
     });
+}
+
+function downloadPDF() {
+    const btn = document.querySelector('.export-btn');
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Generating...';
+    btn.disabled = true;
+
+    // Get the current scan ID from the URL
+    const scanId = window.location.pathname.split('/').filter(Boolean).pop();
+    
+    fetch(`/download-report/${scanId}`)
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.blob();
+        })
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `sqlguard-report-${scanId}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            a.remove();
+        })
+        .catch(err => {
+            console.error('PDF download error:', err);
+            // Fallback: direct navigation
+            window.location.href = `/download-report/${scanId}`;
+        })
+        .finally(() => {
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+        });
 }
 </script>
 {% endblock %}

@@ -19,7 +19,6 @@
     padding: 14px 16px;
     font-family: var(--font-mono);
 }
-
 .scan-input::placeholder { color: var(--text-muted); }
 
 .scan-btn {
@@ -36,7 +35,6 @@
     transition: background 0.15s;
     white-space: nowrap;
 }
-
 .scan-btn:hover { background: var(--accent-blue-light); }
 .scan-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
@@ -47,7 +45,6 @@
     gap: 12px;
     margin-bottom: 16px;
 }
-
 .progress-bar-bg {
     flex: 1;
     height: 4px;
@@ -55,7 +52,6 @@
     border-radius: 2px;
     overflow: hidden;
 }
-
 .progress-bar-fill {
     height: 100%;
     width: 0%;
@@ -63,13 +59,11 @@
     border-radius: 2px;
     transition: width 0.4s ease;
 }
-
 .progress-label {
     font-size: 12px;
     color: var(--text-secondary);
     min-width: 160px;
 }
-
 .progress-pct {
     font-size: 12px;
     font-weight: 700;
@@ -86,7 +80,6 @@
     margin-bottom: 24px;
     overflow: hidden;
 }
-
 .terminal-header {
     display: flex;
     align-items: center;
@@ -94,23 +87,16 @@
     padding: 10px 14px;
     border-bottom: 1px solid var(--border-light);
 }
-
-.dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-}
+.dot { width: 12px; height: 12px; border-radius: 50%; }
 .dot.red    { background: #ff5f57; }
 .dot.yellow { background: #febc2e; }
 .dot.green  { background: #28c840; }
-
 .terminal-title {
     font-size: 11px;
     color: var(--text-muted);
     margin-left: 6px;
     font-family: var(--font-mono);
 }
-
 .terminal-box {
     padding: 14px 16px;
     font-family: var(--font-mono);
@@ -121,7 +107,6 @@
     overflow-y: auto;
     color: #e6edf3;
 }
-
 .t-time  { color: #8b949e; margin-right: 8px; }
 .t-ok    { color: #3fb950; }
 .t-warn  { color: #d29922; }
@@ -135,7 +120,6 @@
     gap: 14px;
     margin-top: 8px;
 }
-
 @media (max-width: 900px) {
     .stat-row { grid-template-columns: repeat(2, 1fr); }
 }
