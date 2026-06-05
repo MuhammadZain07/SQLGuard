@@ -60,6 +60,10 @@ def signup():
         flash("Passwords do not match.", "error")
         return redirect(url_for("auth.login"))
 
+    if len(password) < 8:
+        flash("Password must be at least 8 characters long.", "error")
+        return redirect(url_for("auth.login"))
+
     existing_user = User.query.filter_by(username=username).first()
     if existing_user:
         flash("Username is already taken.", "error")
@@ -75,9 +79,9 @@ def signup():
         session["username"] = user.username
         flash("Account created successfully!", "success")
         return redirect(url_for("main.dashboard"))
-    except Exception as e:
+    except Exception:
         db.session.rollback()
-        flash(f"Error creating account: {str(e)}", "error")
+        flash("An error occurred while creating your account. Please try again.", "error")
         return redirect(url_for("auth.login"))
 
 

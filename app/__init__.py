@@ -15,17 +15,18 @@ def create_app():
 
     with app.app_context():
         db.create_all()
-        # Migration: Add mode column if not exists in scans table
-        try:
-            db.session.execute(db.text("ALTER TABLE scans ADD COLUMN mode VARCHAR(20) DEFAULT 'normal'"))
-            db.session.commit()
-        except Exception:
-            db.session.rollback()
 
-        # Migration: Add profile columns if they don't exist in users table
-        for col, col_type in [("full_name", "VARCHAR(150)"), ("birthday", "VARCHAR(50)"), ("gender", "VARCHAR(50)")]:
+        # Lightweight migrations for existing databases
+        _migrations = [
+            ("scans", "mode", "VARCHAR(20) DEFAULT 'normal'"),
+            ("scans", "user_id", "INTEGER REFERENCES users(id)"),
+            ("users", "full_name", "VARCHAR(150)"),
+            ("users", "birthday", "VARCHAR(50)"),
+            ("users", "gender", "VARCHAR(50)"),
+        ]
+        for table, col, col_type in _migrations:
             try:
-                db.session.execute(db.text(f"ALTER TABLE users ADD COLUMN {col} {col_type}"))
+                db.session.execute(db.text(f"ALTER TABLE {table} ADD COLUMN {col} {col_type}"))
                 db.session.commit()
             except Exception:
                 db.session.rollback()

@@ -2,7 +2,7 @@
 import ipaddress
 import socket
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 from urllib.parse import urlparse
 from ..models.database import db, Scan
 from ..tasks import run_scan
@@ -82,7 +82,7 @@ def start_scan():
             )
         }), 400
 
-    scan = Scan(target_url=target_url, status="pending", mode=mode)
+    scan = Scan(target_url=target_url, status="pending", mode=mode, user_id=session.get('user_id'))
     db.session.add(scan)
     db.session.commit()
 
@@ -97,7 +97,7 @@ def start_scan():
 @login_required
 def stop_scan(scan_id):
     scan = db.session.get(Scan, scan_id)
-    if scan is None:
+    if scan is None or scan.user_id != session.get('user_id'):
         return jsonify({"error": "Scan not found"}), 404
 
     if scan.status in ("pending", "running"):
@@ -121,7 +121,7 @@ def stop_scan(scan_id):
 @login_required
 def scan_status(scan_id):
     scan = db.session.get(Scan, scan_id)
-    if scan is None:
+    if scan is None or scan.user_id != session.get('user_id'):
         return jsonify({"error": "Scan not found"}), 404
 
     from ..models.database import Vulnerability

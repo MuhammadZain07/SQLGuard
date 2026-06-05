@@ -19,23 +19,26 @@ def index():
 @main_bp.route("/dashboard")
 @login_required
 def dashboard():
-    scans = Scan.query.order_by(Scan.created_at.desc()).all()
+    uid = session['user_id']
+    scans = Scan.query.filter_by(user_id=uid).order_by(Scan.created_at.desc()).all()
+    scan_ids = [s.id for s in scans]
     
-    # Calculate cumulative vulnerability statistics
-    critical_count = Vulnerability.query.filter_by(severity='CRITICAL').count()
-    high_count = Vulnerability.query.filter_by(severity='HIGH').count()
-    medium_count = Vulnerability.query.filter_by(severity='MEDIUM').count()
-    low_count = Vulnerability.query.filter_by(severity='LOW').count()
+    # Calculate cumulative vulnerability statistics scoped to this user
+    user_vulns = Vulnerability.query.filter(Vulnerability.scan_id.in_(scan_ids)) if scan_ids else Vulnerability.query.filter(False)
+    critical_count = user_vulns.filter(Vulnerability.severity == 'CRITICAL').count()
+    high_count = user_vulns.filter(Vulnerability.severity == 'HIGH').count()
+    medium_count = user_vulns.filter(Vulnerability.severity == 'MEDIUM').count()
+    low_count = user_vulns.filter(Vulnerability.severity == 'LOW').count()
     
-    error_count = Vulnerability.query.filter(Vulnerability.vuln_type.like('%Error%')).count()
-    boolean_count = Vulnerability.query.filter(Vulnerability.vuln_type.like('%Boolean%')).count()
-    time_count = Vulnerability.query.filter(Vulnerability.vuln_type.like('%Time%')).count()
-    union_count = Vulnerability.query.filter(Vulnerability.vuln_type.like('%Union%')).count()
+    error_count = user_vulns.filter(Vulnerability.vuln_type.like('%Error%')).count()
+    boolean_count = user_vulns.filter(Vulnerability.vuln_type.like('%Boolean%')).count()
+    time_count = user_vulns.filter(Vulnerability.vuln_type.like('%Time%')).count()
+    union_count = user_vulns.filter(Vulnerability.vuln_type.like('%Union%')).count()
     
     # Calculate top vulnerable hosts
     from urllib.parse import urlparse
     from collections import Counter
-    vuln_urls = db.session.query(Vulnerability.url, Scan.target_url).join(Scan, Vulnerability.scan_id == Scan.id).all()
+    vuln_urls = db.session.query(Vulnerability.url, Scan.target_url).join(Scan, Vulnerability.scan_id == Scan.id).filter(Scan.user_id == uid).all()
     host_counter = Counter()
     for v_url, s_url in vuln_urls:
         url_to_parse = v_url or s_url
@@ -75,8 +78,8 @@ def dashboard():
 @main_bp.route("/scan/results/<int:scan_id>")
 @login_required
 def scan_results(scan_id):
-    scan = db.session.get(Scan, scan_id)  # Fix 7 (already noted)
-    if scan is None:
+    scan = db.session.get(Scan, scan_id)
+    if scan is None or scan.user_id != session.get('user_id'):
         abort(404)
     vulns = Vulnerability.query.filter_by(scan_id=scan_id).all()
     return render_template("scan_result.html", scan=scan, vulnerabilities=vulns)
@@ -85,7 +88,7 @@ def scan_results(scan_id):
 @main_bp.route("/history")
 @login_required
 def history():
-    scans = Scan.query.order_by(Scan.created_at.desc()).all()
+    scans = Scan.query.filter_by(user_id=session['user_id']).order_by(Scan.created_at.desc()).all()
     return render_template("history.html", scans=scans)
 
 
@@ -93,7 +96,7 @@ def history():
 @main_bp.route("/reports")
 @login_required
 def reports():
-    scans = Scan.query.order_by(Scan.created_at.desc()).all()
+    scans = Scan.query.filter_by(user_id=session['user_id']).order_by(Scan.created_at.desc()).all()
     return render_template("report.html", scans=scans)
 
 
@@ -218,8 +221,8 @@ def profile():
 @main_bp.route("/report/<int:scan_id>/download")
 @login_required
 def download_report(scan_id):
-    scan = db.session.get(Scan, scan_id)  # Fix 7 (already noted)
-    if scan is None:
+    scan = db.session.get(Scan, scan_id)
+    if scan is None or scan.user_id != session.get('user_id'):
         abort(404)
     vulns = Vulnerability.query.filter_by(scan_id=scan_id).all()
     report_lines = [f"Scan Report — {scan.target_url}", f"Status: {scan.status}", ""]

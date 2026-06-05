@@ -71,7 +71,7 @@ class PayloadInjector:
         # Adjust delay and timeout configuration based on mode
         if self.mode == "aggressive":
             self.REQUEST_DELAY_S = 0.02
-            self.REQUEST_TIMEOUT = 10
+            self.REQUEST_TIMEOUT = 12
         else:
             self.REQUEST_DELAY_S = 0.15
             self.REQUEST_TIMEOUT = 15

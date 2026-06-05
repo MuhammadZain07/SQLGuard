@@ -14,6 +14,8 @@ class User(db.Model):
     birthday = db.Column(db.String(50), nullable=True)
     gender = db.Column(db.String(50), nullable=True)
 
+    scans = db.relationship('Scan', backref='user', lazy=True, cascade='all, delete-orphan')
+
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 
@@ -28,6 +30,7 @@ class Scan(db.Model):
     __tablename__ = 'scans'
     
     id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     target_url = db.Column(db.String(500), nullable=False)
     status = db.Column(db.String(50), default='pending')  # pending/running/completed/failed
     mode = db.Column(db.String(20), default='normal')      # normal/aggressive
@@ -36,8 +39,7 @@ class Scan(db.Model):
     vuln_count = db.Column(db.Integer, default=0)
     celery_task_id = db.Column(db.String(200), nullable=True)
 
-    vulnerabilities = db.relationship('Vulnerability', backref='scan', lazy=True)
-    reports = db.relationship('Report', backref='scan', lazy=True)
+    vulnerabilities = db.relationship('Vulnerability', backref='scan', lazy=True, cascade='all, delete-orphan')
 
     def __repr__(self):
         return f'<Scan {self.id} - {self.target_url}>'
@@ -59,16 +61,4 @@ class Vulnerability(db.Model):
     found_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     def __repr__(self):
-        return f'<Vulnerability {self.id} - {self.vuln_type}>'
-
-
-class Report(db.Model):
-    __tablename__ = 'reports'
-
-    id = db.Column(db.Integer, primary_key=True)
-    scan_id = db.Column(db.Integer, db.ForeignKey('scans.id'), nullable=False)
-    filename = db.Column(db.String(300))
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-
-    def __repr__(self):
-        return f'<Report {self.id} - {self.filename}>'
+        return f'<Vulnerability {self.id} - {self.vuln_type}>'
