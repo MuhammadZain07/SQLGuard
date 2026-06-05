@@ -44,22 +44,22 @@
         <div class="severity-bars">
             <div class="sev-row">
                 <span class="sev-name critical-text">Critical</span>
-                <div class="sev-bar-bg"><div class="sev-bar-fill critical-bg" style="width:{{ [critical * 20, 100] | min }}%"></div></div>
+                <div class="sev-bar-bg"><div class="sev-bar-fill critical-bg" style="width:{{ (critical / total * 100) if total > 0 else 0 }}%; {% if critical == 0 %}min-width: 0;{% endif %}"></div></div>
                 <span class="sev-count">{{ critical }}</span>
             </div>
             <div class="sev-row">
                 <span class="sev-name high-text">High</span>
-                <div class="sev-bar-bg"><div class="sev-bar-fill high-bg" style="width:{{ [high * 20, 100] | min }}%"></div></div>
+                <div class="sev-bar-bg"><div class="sev-bar-fill high-bg" style="width:{{ (high / total * 100) if total > 0 else 0 }}%; {% if high == 0 %}min-width: 0;{% endif %}"></div></div>
                 <span class="sev-count">{{ high }}</span>
             </div>
             <div class="sev-row">
                 <span class="sev-name medium-text">Medium</span>
-                <div class="sev-bar-bg"><div class="sev-bar-fill medium-bg" style="width:{{ [medium * 20, 100] | min }}%"></div></div>
+                <div class="sev-bar-bg"><div class="sev-bar-fill medium-bg" style="width:{{ (medium / total * 100) if total > 0 else 0 }}%; {% if medium == 0 %}min-width: 0;{% endif %}"></div></div>
                 <span class="sev-count">{{ medium }}</span>
             </div>
             <div class="sev-row">
                 <span class="sev-name low-text">Low</span>
-                <div class="sev-bar-bg"><div class="sev-bar-fill low-bg" style="width:{{ [low * 20, 100] | min }}%"></div></div>
+                <div class="sev-bar-bg"><div class="sev-bar-fill low-bg" style="width:{{ (low / total * 100) if total > 0 else 0 }}%; {% if low == 0 %}min-width: 0;{% endif %}"></div></div>
                 <span class="sev-count">{{ low }}</span>
             </div>
         </div>
@@ -121,6 +121,34 @@
         </div>
     </div>
 
+</div>
+
+<!-- ── Scan Analytics Charts ── -->
+{% set error_based = vulnerabilities | selectattr('vuln_type','equalto','Error-Based') | list | length %}
+{% set boolean_based = vulnerabilities | selectattr('vuln_type','equalto','Boolean-Based') | list | length %}
+{% set time_based = vulnerabilities | selectattr('vuln_type','equalto','Time-Based') | list | length %}
+{% set union_based = vulnerabilities | selectattr('vuln_type','equalto','Union-Based') | list | length %}
+
+<div class="card-dark" style="margin-top: 20px;">
+    <div class="details-title" style="border-bottom: 1px solid var(--border-light); padding-bottom: 10px; margin-bottom: 20px;">
+        Scan Analytics
+    </div>
+    <div class="row">
+        <!-- Chart 1: Severity Breakdown -->
+        <div class="col-md-6 text-center mb-4 mb-md-0">
+            <div style="font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 15px;">Severity Distribution</div>
+            <div style="height: 180px; display: flex; align-items: center; justify-content: center;">
+                <canvas id="resultSeverityChart"></canvas>
+            </div>
+        </div>
+        <!-- Chart 2: Finding Types -->
+        <div class="col-md-6 text-center">
+            <div style="font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 15px;">Vulnerabilities by Type</div>
+            <div style="height: 180px; display: flex; align-items: center; justify-content: center;">
+                <canvas id="resultTypeChart"></canvas>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- ── Vulnerability Report ── -->
@@ -197,8 +225,118 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('static', filename='js/utils.js') }}"></script>
+
+{% set critical = vulnerabilities | selectattr('severity','equalto','CRITICAL') | list | length %}
+{% set high     = vulnerabilities | selectattr('severity','equalto','HIGH')     | list | length %}
+{% set medium   = vulnerabilities | selectattr('severity','equalto','MEDIUM')   | list | length %}
+{% set low      = vulnerabilities | selectattr('severity','equalto','LOW')      | list | length %}
+{% set error_based = vulnerabilities | selectattr('vuln_type','equalto','Error-Based') | list | length %}
+{% set boolean_based = vulnerabilities | selectattr('vuln_type','equalto','Boolean-Based') | list | length %}
+{% set time_based = vulnerabilities | selectattr('vuln_type','equalto','Time-Based') | list | length %}
+{% set union_based = vulnerabilities | selectattr('vuln_type','equalto','Union-Based') | list | length %}
+
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    const DEFAULTS = {
+        visibility: { severity:true, type:true, radar:true },
+        types:  { severity:'doughnut', findings:'bar', risk:'radar' },
+        scheme: 'default',
+        opts:   { tooltips:true, animate:true },
+        size:   'md'
+    };
+
+    const SCHEMES = {
+        default: ['#f85149','#d29922','#58a6ff','#3fb950'],
+        neon:    ['#ff2d78','#f5a623','#7b61ff','#00e5a0'],
+        ocean:   ['#ef4444','#f97316','#06b6d4','#10b981'],
+        mono:    ['#f1f5f9','#94a3b8','#475569','#1e293b'],
+        fire:    ['#dc2626','#ea580c','#d97706','#ca8a04'],
+        purple:  ['#a855f7','#ec4899','#6366f1','#14b8a6']
+    };
+
+    // Load state from localStorage or use defaults
+    const state = JSON.parse(localStorage.getItem('sg-analytics') || 'null') || DEFAULTS;
+    // Clean up legacy keys if present
+    if (state.visibility && (state.visibility.timeline !== undefined || state.visibility.score !== undefined)) {
+        state.visibility = { severity: state.visibility.severity !== undefined ? state.visibility.severity : true, 
+                             type: state.visibility.type !== undefined ? state.visibility.type : true, 
+                             radar: state.visibility.radar !== undefined ? state.visibility.radar : true };
+    }
+    const colors = SCHEMES[state.scheme] || SCHEMES.default;
+    const isDark = !document.documentElement.hasAttribute('data-theme');
+    
+    const pluginsBase = {
+        legend: { display: false },
+        tooltip: { enabled: state.opts.tooltips }
+    };
+    const animDur = state.opts.animate ? 600 : 0;
+
+    // Chart 1: Severity Breakdown
+    var ctx1 = document.getElementById('resultSeverityChart');
+    if (ctx1) {
+        new Chart(ctx1.getContext('2d'), {
+            type: state.types.severity || 'doughnut',
+            data: {
+                labels: ['Critical', 'High', 'Medium', 'Low'],
+                datasets: [{
+                    data: [{{ critical }}, {{ high }}, {{ medium }}, {{ low }}],
+                    backgroundColor: colors,
+                    borderColor: isDark ? '#161b22' : '#ffffff',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                cutout: state.types.severity === 'doughnut' ? '70%' : undefined,
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: pluginsBase,
+                animation: { duration: animDur }
+            }
+        });
+    }
+
+    // Chart 2: Vulnerabilities by Type (Bar)
+    var ctx2 = document.getElementById('resultTypeChart');
+    if (ctx2) {
+        const isH = state.types.findings === 'horizontalBar';
+        new Chart(ctx2.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: ['Error-Based', 'Boolean-Based', 'Time-Based', 'Union-Based'],
+                datasets: [{
+                    label: 'Findings',
+                    data: [{{ error_based }}, {{ boolean_based }}, {{ time_based }}, {{ union_based }}],
+                    backgroundColor: colors.map(c => c + 'cc'),
+                    borderRadius: 4,
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                indexAxis: isH ? 'y' : 'x',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: pluginsBase.legend,
+                    tooltip: pluginsBase.tooltip
+                },
+                scales: {
+                    x: { ticks: { color: isDark ? '#6e7681' : '#9ca3af' }, grid: { color: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)' } },
+                    y: { ticks: { color: isDark ? '#6e7681' : '#9ca3af', stepSize: 1 }, grid: { color: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)' }, beginAtZero: true }
+                },
+                animation: { duration: animDur }
+            }
+        });
+    }
+
+    // Auto-trigger print if '?print=true' is in the query params
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('print') === 'true') {
+        setTimeout(() => {
+            window.print();
+        }, 1000);
+    }
+});
+
 function toggleVuln(row) {
     const detail = row.nextElementSibling;
     const chevron = row.querySelector('.vuln-chevron');
@@ -216,38 +354,7 @@ function filterVulns(severity, btn) {
 }
 
 function downloadPDF() {
-    const btn = document.querySelector('.export-btn');
-    const originalHTML = btn.innerHTML;
-    btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Generating...';
-    btn.disabled = true;
-
-    // Get the current scan ID from the URL
-    const scanId = window.location.pathname.split('/').filter(Boolean).pop();
-    
-    fetch(`/download-report/${scanId}`)
-        .then(response => {
-            if (!response.ok) throw new Error('Network response was not ok');
-            return response.blob();
-        })
-        .then(blob => {
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `sqlguard-report-${scanId}.pdf`;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            a.remove();
-        })
-        .catch(err => {
-            console.error('PDF download error:', err);
-            // Fallback: direct navigation
-            window.location.href = `/download-report/${scanId}`;
-        })
-        .finally(() => {
-            btn.innerHTML = originalHTML;
-            btn.disabled = false;
-        });
+    window.print();
 }
 </script>
 {% endblock %}

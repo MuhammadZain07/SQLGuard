@@ -22,5 +22,5 @@ python-dotenv==1.0.1
 # Production server
 gunicorn==22.0.0
 
-#fior news feeding
+# for news feeding
 feedparser==6.0.11

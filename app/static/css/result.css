@@ -1,3 +1,10 @@
+:root {
+    --severity-critical: #f85149;
+    --severity-high:     #d29922;
+    --severity-medium:   #3fb950;
+    --severity-low:      #58a6ff;
+}
+
 /* ── Top Two Panels ── */
 .result-top {
     display: grid;
@@ -253,6 +260,54 @@
     font-size: 11px;
 }
 
+/* Severity Pill Badges */
+.badge-critical {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    background: rgba(248,81,73,0.12);
+    color: var(--severity-critical);
+    border: 1px solid rgba(248,81,73,0.25);
+}
+.badge-high {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    background: rgba(210,153,34,0.12);
+    color: var(--severity-high);
+    border: 1px solid rgba(210,153,34,0.25);
+}
+.badge-medium {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    background: rgba(63,185,80,0.12);
+    color: var(--severity-medium);
+    border: 1px solid rgba(63,185,80,0.25);
+}
+.badge-low {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    background: rgba(88,166,255,0.12);
+    color: var(--severity-low);
+    border: 1px solid rgba(88,166,255,0.25);
+}
+
+/* Severity left border highlights */
+.vuln-item[data-severity="CRITICAL"] { border-left: 3px solid var(--severity-critical); }
+.vuln-item[data-severity="HIGH"]     { border-left: 3px solid var(--severity-high); }
+.vuln-item[data-severity="MEDIUM"]   { border-left: 3px solid var(--severity-medium); }
+.vuln-item[data-severity="LOW"]      { border-left: 3px solid var(--severity-low); }
+
 /* No vulns */
 .no-vulns {
     text-align: center;
@@ -261,3 +316,55 @@
 }
 .no-vulns svg { margin-bottom: 12px; opacity: 0.4; }
 .no-vulns p { font-size: 13px; }
+
+/* ── Print Stylesheet for High-Fidelity PDF Generation ── */
+@media print {
+    /* Hide sidebar, topbar, buttons and filters */
+    .sidebar, .topbar, .vuln-filters, .export-btn, .view-all-btn, .theme-switch-wrapper, .sidebar-toggle-btn {
+        display: none !important;
+    }
+    
+    /* Make content fill page width */
+    .main-content {
+        margin-left: 0 !important;
+        padding: 0 !important;
+    }
+    
+    .page-body {
+        padding: 0 !important;
+    }
+    
+    /* Auto expand all details so they print fully */
+    .vuln-detail {
+        display: block !important;
+    }
+    
+    .vuln-chevron {
+        display: none !important;
+    }
+    
+    /* Prevent page breaks inside cards */
+    .card-dark, .vuln-item {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+    
+    /* High-contrast colors for print */
+    body {
+        background: #ffffff !important;
+        color: #000000 !important;
+    }
+    
+    .card-dark {
+        background: #ffffff !important;
+        border: 1px solid #ccc !important;
+        color: #000000 !important;
+        box-shadow: none !important;
+    }
+    
+    .dg-val.mono {
+        background: #f5f5f5 !important;
+        color: #000000 !important;
+        border: 1px solid #ccc !important;
+    }
+}

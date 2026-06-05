@@ -64,9 +64,15 @@ def _is_valid_url(url: str) -> bool:
         return False
 
 
+from .auth import login_required
+
 @scan_bp.route("/start-scan", methods=["POST"])
+@login_required
 def start_scan():
     target_url = request.form.get("url", "").strip()
+    mode = request.form.get("mode", "normal").strip().lower()
+    if mode not in ("normal", "aggressive"):
+        mode = "normal"
 
     if not _is_valid_url(target_url):
         return jsonify({
@@ -76,18 +82,43 @@ def start_scan():
             )
         }), 400
 
-    scan = Scan(target_url=target_url, status="pending")
+    scan = Scan(target_url=target_url, status="pending", mode=mode)
     db.session.add(scan)
     db.session.commit()
 
-    task = run_scan.delay(scan.id, target_url)
+    task = run_scan.delay(scan.id, target_url, mode=mode)
     scan.celery_task_id = task.id
     db.session.commit()
 
     return jsonify({"scan_id": scan.id, "status": "started"})
 
 
+@scan_bp.route("/stop-scan/<int:scan_id>", methods=["POST"])
+@login_required
+def stop_scan(scan_id):
+    scan = db.session.get(Scan, scan_id)
+    if scan is None:
+        return jsonify({"error": "Scan not found"}), 404
+
+    if scan.status in ("pending", "running"):
+        # Revoke the task in Celery
+        if scan.celery_task_id:
+            from app import celery
+            try:
+                celery.control.revoke(scan.celery_task_id, terminate=True, signal='SIGKILL')
+            except Exception:
+                pass
+        
+        # Mark as failed/stopped
+        scan.status = "failed"
+        db.session.commit()
+        return jsonify({"status": "stopped", "scan_id": scan_id})
+    
+    return jsonify({"error": "Scan is not running"}), 400
+
+
 @scan_bp.route("/scan-status/<int:scan_id>")
+@login_required
 def scan_status(scan_id):
     scan = db.session.get(Scan, scan_id)
     if scan is None:
