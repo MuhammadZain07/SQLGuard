@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block title %}Analytics — SQLGuard{% endblock %}
-{% block breadcrumb %}Analytics{% endblock %}
+{% block title %}Scan Analytics — SQLGuard{% endblock %}
+{% block breadcrumb %}Scan Analytics{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/analytics.css') }}">
@@ -10,7 +10,7 @@
 
 <div class="analytics-header">
     <div>
-        <div class="page-title">Analytics</div>
+        <div class="page-title">Scan Analytics</div>
         <div class="page-sub">Visualise scan data — toggle charts on/off, swap types, customise colours</div>
     </div>
     <div class="analytics-actions">
@@ -36,70 +36,7 @@
     <!-- LEFT: Control Panels -->
     <div class="controls-col">
 
-        <!-- Chart Visibility -->
-        <div class="control-card">
-            <div class="control-card-title">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                    <circle cx="12" cy="12" r="3"/>
-                </svg>
-                Chart Visibility
-            </div>
-            <div class="control-card-sub">Toggle which charts appear on the dashboard</div>
-
-            <div class="toggle-row" id="toggle-severity">
-                <div class="toggle-info">
-                    <div class="toggle-name">Severity Breakdown</div>
-                    <div class="toggle-desc">Donut / pie chart of finding severities</div>
-                </div>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="vis-severity" checked onchange="updatePreview()">
-                    <span class="toggle-track"></span>
-                </label>
-            </div>
-            <div class="toggle-row" id="toggle-type">
-                <div class="toggle-info">
-                    <div class="toggle-name">Findings by Type</div>
-                    <div class="toggle-desc">Bar / horizontal bar of vulnerability categories</div>
-                </div>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="vis-type" checked onchange="updatePreview()">
-                    <span class="toggle-track"></span>
-                </label>
-            </div>
-            <div class="toggle-row" id="toggle-radar">
-                <div class="toggle-info">
-                    <div class="toggle-name">Risk Distribution</div>
-                    <div class="toggle-desc">Radar chart of risk categories</div>
-                </div>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="vis-radar" checked onchange="updatePreview()">
-                    <span class="toggle-track"></span>
-                </label>
-            </div>
-            <div class="toggle-row" id="toggle-timeline">
-                <div class="toggle-info">
-                    <div class="toggle-name">Scan Timeline</div>
-                    <div class="toggle-desc">Line chart of scans over time</div>
-                </div>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="vis-timeline" onchange="updatePreview()">
-                    <span class="toggle-track"></span>
-                </label>
-            </div>
-            <div class="toggle-row" id="toggle-score">
-                <div class="toggle-info">
-                    <div class="toggle-name">Risk Score Gauge</div>
-                    <div class="toggle-desc">Semi-circle gauge showing overall score</div>
-                </div>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="vis-score" onchange="updatePreview()">
-                    <span class="toggle-track"></span>
-                </label>
-            </div>
-        </div>
-
-        <!-- Chart Types -->
+        <!-- Chart Configurations -->
         <div class="control-card">
             <div class="control-card-title">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -107,30 +44,73 @@
                     <line x1="12" y1="20" x2="12" y2="4"/>
                     <line x1="6"  y1="20" x2="6"  y2="14"/>
                 </svg>
-                Chart Types
+                Chart Configurations
             </div>
-            <div class="control-card-sub">Choose how each chart is rendered</div>
+            <div class="control-card-sub">Manage active dashboard charts and layouts</div>
 
-            <div class="type-row">
-                <div class="type-label">Severity Chart</div>
-                <div class="type-opts" id="type-severity">
-                    <button class="type-btn active" data-val="doughnut" onclick="setType('severity','doughnut',this)">Donut</button>
-                    <button class="type-btn" data-val="pie" onclick="setType('severity','pie',this)">Pie</button>
-                    <button class="type-btn" data-val="polarArea" onclick="setType('severity','polarArea',this)">Polar</button>
+            <div class="chart-config-group">
+                <!-- Severity Breakdown -->
+                <div class="chart-config-row">
+                    <div class="chart-config-header">
+                        <div class="toggle-info">
+                            <div class="toggle-name">Severity Breakdown</div>
+                            <div class="toggle-desc">Donut / pie / polar chart of finding severities</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="vis-severity" checked onchange="updatePreview()">
+                            <span class="toggle-track"></span>
+                        </label>
+                    </div>
+                    <div class="chart-type-selector" id="sel-severity">
+                        <span class="selector-label">Type</span>
+                        <div class="type-opts" id="type-severity">
+                            <button class="type-btn active" data-val="doughnut" onclick="setType('severity','doughnut',this)">Donut</button>
+                            <button class="type-btn" data-val="pie" onclick="setType('severity','pie',this)">Pie</button>
+                            <button class="type-btn" data-val="polarArea" onclick="setType('severity','polarArea',this)">Polar</button>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div class="type-row">
-                <div class="type-label">Findings Chart</div>
-                <div class="type-opts" id="type-findings">
-                    <button class="type-btn active" data-val="bar" onclick="setType('findings','bar',this)">Vertical</button>
-                    <button class="type-btn" data-val="horizontalBar" onclick="setType('findings','horizontalBar',this)">Horizontal</button>
+
+                <!-- Findings by Type -->
+                <div class="chart-config-row">
+                    <div class="chart-config-header">
+                        <div class="toggle-info">
+                            <div class="toggle-name">Findings by Type</div>
+                            <div class="toggle-desc">Vertical / horizontal bar of vulnerability categories</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="vis-type" checked onchange="updatePreview()">
+                            <span class="toggle-track"></span>
+                        </label>
+                    </div>
+                    <div class="chart-type-selector" id="sel-type">
+                        <span class="selector-label">Type</span>
+                        <div class="type-opts" id="type-findings">
+                            <button class="type-btn active" data-val="bar" onclick="setType('findings','bar',this)">Vertical</button>
+                            <button class="type-btn" data-val="horizontalBar" onclick="setType('findings','horizontalBar',this)">Horizontal</button>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div class="type-row">
-                <div class="type-label">Risk Chart</div>
-                <div class="type-opts" id="type-risk">
-                    <button class="type-btn active" data-val="radar" onclick="setType('risk','radar',this)">Radar</button>
-                    <button class="type-btn" data-val="bar" onclick="setType('risk','bar',this)">Bar</button>
+
+                <!-- Risk Distribution -->
+                <div class="chart-config-row">
+                    <div class="chart-config-header">
+                        <div class="toggle-info">
+                            <div class="toggle-name">Risk Distribution</div>
+                            <div class="toggle-desc">Radar or bar chart of risk categories</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="vis-radar" checked onchange="updatePreview()">
+                            <span class="toggle-track"></span>
+                        </label>
+                    </div>
+                    <div class="chart-type-selector" id="sel-radar">
+                        <span class="selector-label">Type</span>
+                        <div class="type-opts" id="type-risk">
+                            <button class="type-btn active" data-val="radar" onclick="setType('risk','radar',this)">Radar</button>
+                            <button class="type-btn" data-val="bar" onclick="setType('risk','bar',this)">Bar</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -220,16 +200,6 @@
 
             <div class="toggle-row">
                 <div class="toggle-info">
-                    <div class="toggle-name">Show Legends</div>
-                    <div class="toggle-desc">Display label legends on charts</div>
-                </div>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="opt-legends" onchange="updatePreview()">
-                    <span class="toggle-track"></span>
-                </label>
-            </div>
-            <div class="toggle-row">
-                <div class="toggle-info">
                     <div class="toggle-name">Show Tooltips</div>
                     <div class="toggle-desc">Interactive hover tooltips</div>
                 </div>
@@ -290,16 +260,6 @@
                 <canvas id="prevRadarChart" style="max-height:170px;"></canvas>
             </div>
 
-            <div class="preview-chart-card hidden" id="prev-timeline">
-                <div class="preview-chart-title">Scan Timeline</div>
-                <canvas id="prevTimelineChart" style="max-height:170px;"></canvas>
-            </div>
-
-            <div class="preview-chart-card hidden" id="prev-score">
-                <div class="preview-chart-title">Risk Score Gauge</div>
-                <canvas id="prevScoreChart" style="max-height:170px;"></canvas>
-            </div>
-
         </div>
 
         <div class="preview-note">
@@ -321,10 +281,10 @@
 <script>
 /* ─── State ─── */
 const DEFAULTS = {
-    visibility: { severity:true, type:true, radar:true, timeline:false, score:false },
+    visibility: { severity:true, type:true, radar:true },
     types:  { severity:'doughnut', findings:'bar', risk:'radar' },
     scheme: 'default',
-    opts:   { legends:false, tooltips:true, animate:true },
+    opts:   { tooltips:true, animate:true },
     size:   'md'
 };
 
@@ -338,6 +298,12 @@ const SCHEMES = {
 };
 
 let state = JSON.parse(localStorage.getItem('sg-analytics') || 'null') || JSON.parse(JSON.stringify(DEFAULTS));
+// Clean up any legacy localStorage keys to prevent errors
+if (state.visibility.timeline !== undefined || state.visibility.score !== undefined) {
+    state.visibility = { severity: state.visibility.severity !== undefined ? state.visibility.severity : true, 
+                         type: state.visibility.type !== undefined ? state.visibility.type : true, 
+                         radar: state.visibility.radar !== undefined ? state.visibility.radar : true };
+}
 let charts = {};
 
 /* ─── Init ─── */
@@ -353,6 +319,8 @@ function applyStateToUI() {
         if (el) el.checked = v;
         const card = document.getElementById('prev-' + k);
         if (card) card.classList.toggle('hidden', !v);
+        const selector = document.getElementById('sel-' + k);
+        if (selector) selector.classList.toggle('disabled', !v);
     });
     // type buttons
     Object.entries(state.types).forEach(([chart, val]) => {
@@ -382,7 +350,7 @@ function tickColor()  { return isDark() ? '#6e7681' : '#9ca3af'; }
 function animDur()    { return state.opts.animate ? 600 : 0; }
 function pluginsBase() {
     return {
-        legend:  { display: state.opts.legends, labels:{ color: tickColor(), font:{size:11} } },
+        legend:  { display: false },
         tooltip: { enabled: state.opts.tooltips }
     };
 }
@@ -391,8 +359,6 @@ function buildAllCharts() {
     buildSeverity();
     buildType();
     buildRadar();
-    buildTimeline();
-    buildScore();
 }
 
 function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
@@ -505,72 +471,20 @@ function buildRadar() {
     }
 }
 
-function buildTimeline() {
-    destroyChart('timeline');
-    const ctx = document.getElementById('prevTimelineChart');
-    if (!ctx) return;
-    const col = chartColors();
-    charts.timeline = new Chart(ctx, {
-        type:'line',
-        data:{
-            labels:['Jan','Feb','Mar','Apr','May','Jun'],
-            datasets:[{
-                label:'Scans',
-                data:[2,5,3,8,4,9],
-                borderColor: col[2],
-                backgroundColor: col[2]+'28',
-                fill:true, tension:0.4,
-                pointRadius:3, borderWidth:2
-            }]
-        },
-        options:{
-            plugins: pluginsBase(),
-            scales:{
-                x:{grid:{color:gridColor()},ticks:{color:tickColor(),font:{size:10}}},
-                y:{grid:{color:gridColor()},ticks:{color:tickColor(),font:{size:10}},beginAtZero:true}
-            },
-            animation:{duration:animDur()}
-        }
-    });
-}
-
-function buildScore() {
-    destroyChart('score');
-    const ctx = document.getElementById('prevScoreChart');
-    if (!ctx) return;
-    const col = chartColors();
-    charts.score = new Chart(ctx, {
-        type:'doughnut',
-        data:{
-            labels:['Risk','Remaining'],
-            datasets:[{
-                data:[65,35],
-                backgroundColor:[col[0], isDark()?'#21262d':'#e2e6ee'],
-                borderWidth:0,
-                circumference:180,
-                rotation:-90
-            }]
-        },
-        options:{
-            cutout:'72%',
-            plugins:{ legend:{display:false}, tooltip:{enabled:false} },
-            animation:{duration:animDur()}
-        }
-    });
-}
-
 /* ─── Controls ─── */
 function updatePreview() {
     // visibility
-    ['severity','type','radar','timeline','score'].forEach(k => {
+    ['severity','type','radar'].forEach(k => {
         const el = document.getElementById('vis-' + k);
         if (!el) return;
         state.visibility[k] = el.checked;
         const card = document.getElementById('prev-' + k);
         if (card) card.classList.toggle('hidden', !el.checked);
+        const selector = document.getElementById('sel-' + k);
+        if (selector) selector.classList.toggle('disabled', !el.checked);
     });
     // opts
-    ['legends','tooltips','animate'].forEach(k => {
+    ['tooltips','animate'].forEach(k => {
         const el = document.getElementById('opt-' + k);
         if (el) state.opts[k] = el.checked;
     });

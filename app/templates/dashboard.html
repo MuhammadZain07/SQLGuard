@@ -4,9 +4,60 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/scan.css') }}">
 {% endblock %}
 
 {% block content %}
+
+<!-- ── Scan Bar ── -->
+<div class="scan-bar" style="align-items: center; padding: 6px 12px; height: 56px;">
+    <input type="text" id="targetUrl" class="scan-input"
+           placeholder="https://target.com/login?id=1" autocomplete="off" style="padding: 0; height: 100%; border: none; outline: none; background: transparent; color: var(--text-primary); font-family: var(--font-mono); font-size: 14px; flex: 1;">
+    
+    <!-- Segmented Scan Mode Toggle -->
+    <div class="mode-segmented-control">
+        <button type="button" class="mode-btn active" id="btnModeNormal" onclick="changeMode('normal')">
+            Normal
+        </button>
+        <button type="button" class="mode-btn" id="btnModeAggressive" onclick="changeMode('aggressive')">
+            Aggressive
+        </button>
+    </div>
+    <input type="hidden" id="scanMode" value="normal">
+    
+    <button class="scan-btn" id="scanBtn" onclick="startScan()" style="border-radius: 6px; height: 36px; padding: 0 20px; display: flex; align-items: center; gap: 8px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+        </svg>
+        Run Scan
+    </button>
+    
+    <!-- Stop Scan Button (hidden initially) -->
+    <button class="stop-btn" id="stopBtn" onclick="stopScan()" style="display: none; align-items: center; justify-content: center; gap: 8px; background: var(--accent-red); color: #fff; border: none; border-radius: 6px; padding: 0 20px; font-size: 14px; font-weight: 600; height: 36px; cursor: pointer; transition: opacity 0.15s; white-space: nowrap;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+            <rect x="4" y="4" width="16" height="16" rx="2" ry="2"/>
+        </svg>
+        Stop Scan
+    </button>
+</div>
+
+<!-- ── Progress ── -->
+<div class="progress-wrap" id="progressWrap" style="display:none; margin-bottom: 20px;">
+    <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progressBar"></div>
+    </div>
+    <span class="progress-label" id="progressLabel">Initializing...</span>
+    <span class="progress-pct" id="progressPct">0%</span>
+</div>
+
+<!-- ── Terminal ── -->
+<div class="terminal-wrap" id="terminalWrap" style="display:none; margin-bottom: 20px;">
+    <div class="terminal-header">
+        <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+        <span class="terminal-title">sqli-scanner — live output</span>
+    </div>
+    <div class="terminal-box" id="terminalBox"></div>
+</div>
 
 <!-- 
     STAT CARDS
@@ -61,69 +112,37 @@
 -->
 <div class="charts-row">
 
-    <!-- doughnut chart: completed vs running vs failed -->
+    <!-- horizontal bar chart: top vulnerable hosts -->
     <div class="card-dark chart-card">
-        <div class="chart-title">Scan Status Breakdown</div>
+        <div class="chart-title">Top Vulnerable Hosts</div>
+        <canvas id="topHostsChart" height="140"></canvas>
+    </div>
+
+    <!-- doughnut chart: severity breakdown -->
+    <div class="card-dark chart-card">
+        <div class="chart-title">Vulnerability Severity Breakdown</div>
         <div class="doughnut-wrap">
             <canvas id="statusChart"></canvas>
         </div>
     </div>
 
-    <!-- bar chart: vulns per scan -->
+    <!-- bar chart: vulnerability categories -->
     <div class="card-dark chart-card">
-        <div class="chart-title">Vulnerabilities Per Scan</div>
+        <div class="chart-title">Vulnerability Types</div>
         <canvas id="vulnBarChart" height="140"></canvas>
     </div>
 
 </div>
 
-<!-- 
-    RECENT SCANS TABLE
-    loop through scans and show each one as a row
--->
-<div class="card-dark" style="margin-top:20px;">
-    <div class="table-header">
-        <div class="chart-title" style="margin-bottom:0;">Recent Scans</div>
-        <a href="{{ url_for('main.history') }}" class="view-all-btn">View All</a>
+<!-- ── Live News Ticker ── -->
+<div class="news-ticker-container" onclick="window.location.href='/news'">
+    <div class="ticker-title">Live News</div>
+    <div class="ticker-wrap">
+        <div class="ticker-text" id="tickerText">Connecting to live security news feeds...</div>
     </div>
-    <table class="dash-table">
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>Target URL</th>
-                <th>Date</th>
-                <th>Status</th>
-                <th>Vulns</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% if scans %}
-                {% for s in scans %}
-                <tr>
-                    <td>#{{ s.id }}</td>
-                    <td class="url-cell">{{ s.target_url }}</td>
-                    <td>{{ s.created_at.strftime('%b %d, %Y') }}</td>
-                    <td>
-                        <span class="status-badge status-{{ s.status }}">
-                            {{ s.status }}
-                        </span>
-                    </td>
-                    <td>{{ s.vuln_count }}</td>
-                    <td>
-                        <a href="{{ url_for('main.scan_results', scan_id=s.id) }}"
-                           class="view-btn">View</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            {% else %}
-                <tr>
-                    <td colspan="6" class="empty-row">No scans yet!</td>
-                </tr>
-            {% endif %}
-        </tbody>
-    </table>
 </div>
+
+
 
 <!-- pass numbers to dashboard.js for charts -->
 <script>
@@ -132,6 +151,40 @@
     var failedCount    = {{ scans | selectattr('status','equalto','failed')    | list | length }};
     var scanLabels = [{% for s in scans %}"#{{ s.id }}"{% if not loop.last %},{% endif %}{% endfor %}];
     var vulnCounts = [{% for s in scans %}{{ s.vuln_count }}{% if not loop.last %},{% endif %}{% endfor %}];
+
+    // Cumulative stats across all scans
+    var vulnSeverity = {
+        critical: {{ vuln_severity.critical }},
+        high: {{ vuln_severity.high }},
+        medium: {{ vuln_severity.medium }},
+        low: {{ vuln_severity.low }}
+    };
+    var vulnTypes = {
+        error: {{ vuln_types.error }},
+        boolean: {{ vuln_types.boolean }},
+        time: {{ vuln_types.time }},
+        union: {{ vuln_types.union }}
+    };
+    var topHosts = {
+        labels: [{% for label in top_hosts.labels %}"{{ label }}"{% if not loop.last %},{% endif %}{% endfor %}],
+        counts: [{% for count in top_hosts.counts %}{{ count }}{% if not loop.last %},{% endif %}{% endfor %}]
+    };
+
+    function changeMode(mode) {
+        const btnNormal = document.getElementById('btnModeNormal');
+        const btnAggressive = document.getElementById('btnModeAggressive');
+        const inputMode = document.getElementById('scanMode');
+        
+        if (mode === 'normal') {
+            btnNormal.classList.add('active');
+            btnAggressive.classList.remove('active');
+            inputMode.value = 'normal';
+        } else {
+            btnAggressive.classList.add('active');
+            btnNormal.classList.remove('active');
+            inputMode.value = 'aggressive';
+        }
+    }
 </script>
 
 {% endblock %}

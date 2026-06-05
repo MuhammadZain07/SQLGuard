@@ -55,6 +55,12 @@ async function startScan() {
         const res = await fetch('/start-scan', { method: 'POST', body: formData });
         const data = await res.json();
 
+        if (!res.ok) {
+            termLine(data.error || 'Failed to start scan.', 'warn');
+            document.getElementById('scanBtn').disabled = false;
+            return;
+        }
+
         if (!data.scan_id) {
             termLine('Failed to start scan.', 'warn');
             document.getElementById('scanBtn').disabled = false;
@@ -98,6 +104,8 @@ function pollStatus(scanId) {
                 document.getElementById('statHigh').textContent = data.high || 0;
                 document.getElementById('statMedium').textContent = data.medium || 0;
                 document.getElementById('statLow').textContent = data.low || 0;
+
+                document.dispatchEvent(new CustomEvent('scanComplete', { detail: data }));
 
                 document.getElementById('scanBtn').disabled = false;
 

@@ -1,23 +1,21 @@
 {% extends "base.html" %}
-{% block title %}Reports — SQLi Scanner{% endblock %}
-{% block breadcrumb %}Reports{% endblock %}
+{% block title %}Scan Report — SQLi Scanner{% endblock %}
+{% block breadcrumb %}Scan Report{% endblock %}
 
 {% block content %}
 
-<div class="page-title">Reports</div>
-<div class="page-sub">Download scan reports for your records</div>
+<div class="page-title">Scan Report</div>
+<div class="page-sub">View and export high-fidelity PDF reports of database security assessments</div>
 
-<!-- list all scans with a download button for each -->
+<!-- list all scans with View and Download links -->
 <div class="card-dark">
     <table class="rep-table">
         <thead>
             <tr>
-                <th>#</th>
-                <th>Target URL</th>
-                <th>Date</th>
-                <th>Status</th>
-                <th>Vulns</th>
-                <th>Download</th>
+                <th style="width: 10%;">Scan ID</th>
+                <th style="width: 50%;">Target URL</th>
+                <th style="width: 20%; text-align: center;">View</th>
+                <th style="width: 20%; text-align: center;">Download as PDF</th>
             </tr>
         </thead>
         <tbody>
@@ -26,25 +24,23 @@
                 <tr>
                     <td>#{{ s.id }}</td>
                     <td class="url-cell">{{ s.target_url }}</td>
-                    <td>{{ s.created_at.strftime('%b %d, %Y') }}</td>
-                    <td>
-                        <span class="status-badge status-{{ s.status }}">
-                            {{ s.status }}
-                        </span>
+                    <td style="text-align: center;">
+                        <a href="{{ url_for('main.scan_results', scan_id=s.id) }}"
+                           class="view-link-btn">
+                           View Detail
+                        </a>
                     </td>
-                    <td>{{ s.vuln_count }}</td>
-                    <td>
-                        <!-- calls download_report route in main.py -->
-                        <a href="{{ url_for('main.download_report', scan_id=s.id) }}"
-                           class="download-btn">
-                           Download
+                    <td style="text-align: center;">
+                        <a href="{{ url_for('main.scan_results', scan_id=s.id) }}?print=true"
+                           class="download-pdf-btn">
+                           Download PDF
                         </a>
                     </td>
                 </tr>
                 {% endfor %}
             {% else %}
                 <tr>
-                    <td colspan="6" class="empty-row">No scans yet to download!</td>
+                    <td colspan="4" class="empty-row">No scans available yet! Run a scan to generate reports.</td>
                 </tr>
             {% endif %}
         </tbody>
@@ -58,8 +54,7 @@
 .rep-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 
 .rep-table th {
-    text-align: left;
-    padding: 10px 14px;
+    padding: 12px 14px;
     font-size: 11px;
     color: var(--text-muted);
     text-transform: uppercase;
@@ -69,12 +64,13 @@
     padding: 13px 14px;
     border-bottom: 1px solid var(--border-light);
     color: var(--text-secondary);
+    vertical-align: middle;
 }
 .rep-table tr:last-child td { border-bottom: none; }
 .rep-table tr:hover td { background: var(--bg-card-hover); }
 
 .url-cell {
-    max-width: 280px;
+    max-width: 320px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -83,25 +79,39 @@
 
 .empty-row { text-align: center; color: var(--text-muted); padding: 32px !important; }
 
-.status-badge {
-    font-size: 10px; font-weight: 700;
-    padding: 3px 8px; border-radius: 3px; text-transform: uppercase;
-}
-.status-completed { background: rgba(63,185,80,0.15);   color: #3fb950; }
-.status-failed    { background: rgba(248,81,73,0.15);   color: #f85149; }
-.status-running   { background: rgba(88,166,255,0.15);  color: #58a6ff; }
-.status-pending   { background: rgba(139,148,158,0.15); color: #8b949e; }
-
-.download-btn {
+.view-link-btn {
+    display: inline-block;
     font-size: 11px;
-    color: #3fb950;
+    font-weight: 600;
+    color: var(--accent-blue-light);
     text-decoration: none;
-    padding: 4px 12px;
+    padding: 5px 14px;
+    border: 1px solid rgba(88,166,255,0.3);
+    border-radius: 4px;
+    background: rgba(88,166,255,0.06);
+    transition: all 0.15s;
+}
+.view-link-btn:hover {
+    background: rgba(88,166,255,0.15);
+    color: var(--text-primary);
+}
+
+.download-pdf-btn {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent-green);
+    text-decoration: none;
+    padding: 5px 14px;
     border: 1px solid rgba(63,185,80,0.3);
     border-radius: 4px;
-    background: rgba(63,185,80,0.08);
+    background: rgba(63,185,80,0.06);
+    transition: all 0.15s;
 }
-.download-btn:hover { background: rgba(63,185,80,0.15); }
+.download-pdf-btn:hover {
+    background: rgba(63,185,80,0.15);
+    color: var(--text-primary);
+}
 </style>
 
 {% endblock %}
