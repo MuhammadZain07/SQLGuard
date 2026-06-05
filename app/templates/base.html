@@ -3,147 +3,220 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}SQLGuard Threat Intelligence Command{% endblock %}</title>
-
-<link rel="icon" type="image/png" href="{{ url_for('static', filename='images/favicon.png') }}">
-
+    <title>{% block title %}SQLGuard{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/favicon.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
     {% block extra_css %}{% endblock %}
-    
+    <!-- Apply theme + sidebar state before render to prevent flash -->
     <script>
-        if (localStorage.getItem('app-ui-theme') === 'light') {
-            document.documentElement.setAttribute('data-theme', 'light');
-        }
+        (function(){
+            if (localStorage.getItem('app-ui-theme') === 'light')
+                document.documentElement.setAttribute('data-theme','light');
+            if (localStorage.getItem('sidebar-collapsed') === 'true')
+                document.documentElement.setAttribute('data-sidebar-collapsed','true');
+        })();
     </script>
 </head>
 <body>
 
-    <aside class="sidebar">
+<aside class="sidebar" id="sidebar">
 
-        <div class="sidebar-branding" style="display: flex; align-items: center; gap: 12px; padding: 24px 16px; white-space: nowrap; overflow: hidden; border-bottom: none !important;">
-            <div class="branding-shield-box" style="background: transparent; box-shadow: none; display: flex; align-items: center; justify-content: center; width: 45px; height: 45px; flex-shrink: 0;">
-                <img src="{{ url_for('static', filename='images/brand-logo.png') }}" 
-                     alt="SQLGuard Logo" 
-                     style="width: 100%; height: 100%; object-fit: contain; display: block;">
-            </div>
-            
-            <div class="branding-meta-text" style="display: flex; flex-direction: column; min-width: 0;">
-                <span class="branding-title-text" style="font-size: 18px; font-weight: 700; color: #ffffff; letter-spacing: -0.02em; line-height: 1.2;">SQLGuard</span>
-                <span class="branding-sub-tag" style="font-size: 13px; color: #64748b; font-weight: 500; margin-top: 2px;">Pro</span>
-            </div>
+    <div class="sidebar-branding">
+        <div class="branding-shield-box">
+            <img src="{{ url_for('static', filename='images/brand-logo.png') }}" alt="SQLGuard">
         </div>
-
-        <div class="sidebar-section-label">Workspace</div>
-        <nav class="sidebar-nav">
-            <a href="{{ url_for('main.index') }}"
-               class="nav-item {% if request.endpoint == 'main.index' %}active{% endif %}">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-                    <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
-                </svg>
-                <span>Dashboard</span>
-            </a>
-            <a href="{{ url_for('main.history') }}"
-               class="nav-item {% if request.endpoint == 'main.history' %}active{% endif %}">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                </svg>
-                <span>Scan History</span>
-            </a>
-            <a href="{{ url_for('main.reports') }}"
-               class="nav-item {% if request.endpoint == 'main.reports' %}active{% endif %}">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                    <polyline points="14 2 14 8 20 8"/>
-                </svg>
-                <span>Reports</span>
-            </a>
-            <a href="{{ url_for('main.news') }}"
-               class="nav-item {% if request.endpoint == 'main.news' %}active{% endif %}">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 0-2 2z"/>
-                    <line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/>
-                </svg>
-                <span>Security News</span>
-            </a>
-        </nav>
-
-        <div class="sidebar-footer">
-            <div class="engine-status">
-                <span class="status-dot"></span>
-                <span class="status-label">Scan Engine</span>
-                <span class="status-value">ONLINE</span>
-            </div>
+        <div class="branding-meta-text">
+            <span class="branding-title-text">SQLGuard</span>
+            <span class="branding-sub-tag">Pro Edition</span>
         </div>
+    </div>
 
-    </aside>
+    <div class="sidebar-section-label">Workspace</div>
+    <nav class="sidebar-nav">
+        <a href="{{ url_for('main.index') }}"
+           class="nav-item {% if request.endpoint == 'main.index' %}active{% endif %}">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+            </svg>
+            <span class="nav-label">Dashboard</span>
+        </a>
+        <a href="{{ url_for('main.history') }}"
+           class="nav-item {% if request.endpoint == 'main.history' %}active{% endif %}">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <span class="nav-label">Scan History</span>
+        </a>
+        <a href="{{ url_for('main.reports') }}"
+           class="nav-item {% if request.endpoint == 'main.reports' %}active{% endif %}">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+            </svg>
+            <span class="nav-label">Reports</span>
+        </a>
+        <a href="{{ url_for('main.analytics') }}"
+           class="nav-item {% if request.endpoint == 'main.analytics' %}active{% endif %}">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="20" x2="18" y2="10"/>
+                <line x1="12" y1="20" x2="12" y2="4"/>
+                <line x1="6"  y1="20" x2="6"  y2="14"/>
+            </svg>
+            <span class="nav-label">Analytics</span>
+        </a>
+        <a href="{{ url_for('main.news') }}"
+           class="nav-item {% if request.endpoint == 'main.news' %}active{% endif %}">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 0-2 2z"/>
+                <line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/>
+            </svg>
+            <span class="nav-label">Security News</span>
+        </a>
+    </nav>
 
-    <main class="main-content">
+    <div class="sidebar-footer">
+        <div class="engine-status">
+            <span class="status-dot"></span>
+            <span class="status-label nav-label">Scan Engine</span>
+            <span class="status-value nav-label">ONLINE</span>
+        </div>
+    </div>
 
-        <div class="topbar">
+</aside>
+
+<main class="main-content" id="mainContent">
+
+    <div class="topbar">
+        <div class="topbar-left">
+            <button class="sidebar-toggle-btn" onclick="toggleSidebar()" title="Toggle sidebar">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="3" y1="6"  x2="21" y2="6"/>
+                    <line x1="3" y1="12" x2="21" y2="12"/>
+                    <line x1="3" y1="18" x2="21" y2="18"/>
+                </svg>
+            </button>
             <div class="breadcrumb-trail">
                 <span class="breadcrumb-root">SQLGuard</span>
                 <span class="breadcrumb-sep">/</span>
                 <span class="breadcrumb-current">{% block breadcrumb %}Dashboard{% endblock %}</span>
             </div>
-            <div class="topbar-right">
-                <div class="theme-switch-wrapper">
-                    <span class="switch-label-text">Light Theme</span>
-                    <label class="theme-switch" for="themeCheckbox">
-                        <input type="checkbox" id="themeCheckbox" />
-                        <div class="slider"></div>
-                    </label>
+        </div>
+        <div class="topbar-right">
+            <div class="theme-switch-wrapper">
+                <span class="switch-label-text">Light</span>
+                <label class="theme-switch" for="themeChk">
+                    <input type="checkbox" id="themeChk">
+                    <div class="slider"></div>
+                </label>
+            </div>
+            <!-- Account -->
+            <div class="account-menu-wrap" id="acctWrap">
+                <button class="account-btn" onclick="toggleAcct()">
+                    <div class="account-avatar">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                    </div>
+                    <span class="account-name">Admin</span>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="account-chevron">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                </button>
+                <div class="account-dropdown" id="acctDrop">
+                    <div class="account-dropdown-header">
+                        <div class="account-dropdown-avatar">A</div>
+                        <div>
+                            <div class="account-dropdown-name">Admin User</div>
+                            <div class="account-dropdown-role">Security Analyst</div>
+                        </div>
+                    </div>
+                    <div class="account-dropdown-divider"></div>
+                    <a href="#" class="account-dropdown-item">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        Profile Settings
+                    </a>
+                    <a href="{{ url_for('main.analytics') }}" class="account-dropdown-item">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="20" x2="18" y2="10"/>
+                            <line x1="12" y1="20" x2="12" y2="4"/>
+                            <line x1="6" y1="20" x2="6" y2="14"/>
+                        </svg>
+                        Analytics Settings
+                    </a>
+                    <div class="account-dropdown-divider"></div>
+                    <a href="#" class="account-dropdown-item account-logout">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                            <polyline points="16 17 21 12 16 7"/>
+                            <line x1="21" y1="12" x2="9" y2="12"/>
+                        </svg>
+                        Sign Out
+                    </a>
                 </div>
             </div>
         </div>
+    </div>
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div class="px-4 pt-3">
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        {% endwith %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="px-4 pt-3">
+                {% for cat, msg in messages %}
+                    <div class="alert alert-{{ 'danger' if cat == 'error' else cat }} alert-dismissible fade show" role="alert">
+                        {{ msg }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
 
-        <div class="page-body">
-            {% block content %}{% endblock %}
-        </div>
+    <div class="page-body">{% block content %}{% endblock %}</div>
 
-    </main>
+</main>
 
-    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/chart.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/utils.js') }}"></script>
-    
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const toggleSwitch = document.querySelector('#themeCheckbox');
-            const root = document.documentElement;
-            const savedTheme = localStorage.getItem('app-ui-theme') || 'dark';
-
-            if (savedTheme === 'light') {
-                toggleSwitch.checked = true;
-            }
-
-            toggleSwitch.addEventListener('change', (e) => {
-                if (e.target.checked) {
-                    root.setAttribute('data-theme', 'light');
-                    localStorage.setItem('app-ui-theme', 'light');
-                } else {
-                    root.removeAttribute('data-theme');
-                    localStorage.setItem('app-ui-theme', 'dark');
-                }
-            });
-        });
-    </script>
-    
-    {% block extra_js %}{% endblock %}
-
+<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/chart.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/utils.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const chk = document.getElementById('themeChk');
+    if (localStorage.getItem('app-ui-theme') === 'light') chk.checked = true;
+    chk.addEventListener('change', e => {
+        if (e.target.checked) {
+            document.documentElement.setAttribute('data-theme','light');
+            localStorage.setItem('app-ui-theme','light');
+        } else {
+            document.documentElement.removeAttribute('data-theme');
+            localStorage.setItem('app-ui-theme','dark');
+        }
+    });
+    document.addEventListener('click', e => {
+        const wrap = document.getElementById('acctWrap');
+        if (wrap && !wrap.contains(e.target))
+            document.getElementById('acctDrop').classList.remove('open');
+    });
+});
+function toggleSidebar() {
+    const root = document.documentElement;
+    const collapsed = root.hasAttribute('data-sidebar-collapsed');
+    if (collapsed) {
+        root.removeAttribute('data-sidebar-collapsed');
+        localStorage.setItem('sidebar-collapsed','false');
+    } else {
+        root.setAttribute('data-sidebar-collapsed','true');
+        localStorage.setItem('sidebar-collapsed','true');
+    }
+}
+function toggleAcct() {
+    document.getElementById('acctDrop').classList.toggle('open');
+}
+</script>
+{% block extra_js %}{% endblock %}
 </body>
 </html>

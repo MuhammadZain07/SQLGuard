@@ -22,8 +22,6 @@
                 <th>Target URL</th>
                 <th>Date</th>
                 <th>Status</th>
-                <th>Vulns Found</th>
-                <th>Action</th>
             </tr>
         </thead>
         <tbody id="historyBody">
@@ -34,13 +32,11 @@
                     <td class="url-cell" data-url="{{ s.target_url }}">{{ s.target_url }}</td>
                     <td>{{ s.created_at.strftime('%b %d, %Y') }}</td>
                     <td><span class="status-badge status-{{ s.status }}">{{ s.status }}</span></td>
-                    <td>{{ s.vuln_count }}</td>
-                    <td><a href="{{ url_for('main.scan_results', scan_id=s.id) }}" class="btn-view">View</a></td>
                 </tr>
                 {% endfor %}
             {% else %}
                 <tr>
-                    <td colspan="6" class="empty-row">No scans yet. Run your first scan!</td>
+                    <td colspan="4" class="empty-row">No scans yet. Run your first scan!</td>
                 </tr>
             {% endif %}
         </tbody>

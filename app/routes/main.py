@@ -59,8 +59,9 @@ def news():
         pass  # if it fails, articles stays empty, fallback shows
     return render_template("news.html", articles=articles)
 
-
-
+@main_bp.route('/analytics')
+def analytics():
+    return render_template('analytics.html')
 
 
 @main_bp.route("/report/<int:scan_id>/download")

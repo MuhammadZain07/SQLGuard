@@ -1,0 +1,619 @@
+{% extends "base.html" %}
+{% block title %}Analytics — SQLGuard{% endblock %}
+{% block breadcrumb %}Analytics{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/analytics.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<div class="analytics-header">
+    <div>
+        <div class="page-title">Analytics</div>
+        <div class="page-sub">Visualise scan data — toggle charts on/off, swap types, customise colours</div>
+    </div>
+    <div class="analytics-actions">
+        <button class="btn-outline" onclick="resetAllSettings()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="1 4 1 10 7 10"/>
+                <path d="M3.51 15a9 9 0 1 0 .49-3.7"/>
+            </svg>
+            Reset Defaults
+        </button>
+        <button class="btn-primary" onclick="saveAndApply()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            Save Settings
+        </button>
+    </div>
+</div>
+
+<!-- ── Two-column layout: controls left, preview right ── -->
+<div class="analytics-layout">
+
+    <!-- LEFT: Control Panels -->
+    <div class="controls-col">
+
+        <!-- Chart Visibility -->
+        <div class="control-card">
+            <div class="control-card-title">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                </svg>
+                Chart Visibility
+            </div>
+            <div class="control-card-sub">Toggle which charts appear on the dashboard</div>
+
+            <div class="toggle-row" id="toggle-severity">
+                <div class="toggle-info">
+                    <div class="toggle-name">Severity Breakdown</div>
+                    <div class="toggle-desc">Donut / pie chart of finding severities</div>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="vis-severity" checked onchange="updatePreview()">
+                    <span class="toggle-track"></span>
+                </label>
+            </div>
+            <div class="toggle-row" id="toggle-type">
+                <div class="toggle-info">
+                    <div class="toggle-name">Findings by Type</div>
+                    <div class="toggle-desc">Bar / horizontal bar of vulnerability categories</div>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="vis-type" checked onchange="updatePreview()">
+                    <span class="toggle-track"></span>
+                </label>
+            </div>
+            <div class="toggle-row" id="toggle-radar">
+                <div class="toggle-info">
+                    <div class="toggle-name">Risk Distribution</div>
+                    <div class="toggle-desc">Radar chart of risk categories</div>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="vis-radar" checked onchange="updatePreview()">
+                    <span class="toggle-track"></span>
+                </label>
+            </div>
+            <div class="toggle-row" id="toggle-timeline">
+                <div class="toggle-info">
+                    <div class="toggle-name">Scan Timeline</div>
+                    <div class="toggle-desc">Line chart of scans over time</div>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="vis-timeline" onchange="updatePreview()">
+                    <span class="toggle-track"></span>
+                </label>
+            </div>
+            <div class="toggle-row" id="toggle-score">
+                <div class="toggle-info">
+                    <div class="toggle-name">Risk Score Gauge</div>
+                    <div class="toggle-desc">Semi-circle gauge showing overall score</div>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="vis-score" onchange="updatePreview()">
+                    <span class="toggle-track"></span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Chart Types -->
+        <div class="control-card">
+            <div class="control-card-title">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="20" x2="18" y2="10"/>
+                    <line x1="12" y1="20" x2="12" y2="4"/>
+                    <line x1="6"  y1="20" x2="6"  y2="14"/>
+                </svg>
+                Chart Types
+            </div>
+            <div class="control-card-sub">Choose how each chart is rendered</div>
+
+            <div class="type-row">
+                <div class="type-label">Severity Chart</div>
+                <div class="type-opts" id="type-severity">
+                    <button class="type-btn active" data-val="doughnut" onclick="setType('severity','doughnut',this)">Donut</button>
+                    <button class="type-btn" data-val="pie" onclick="setType('severity','pie',this)">Pie</button>
+                    <button class="type-btn" data-val="polarArea" onclick="setType('severity','polarArea',this)">Polar</button>
+                </div>
+            </div>
+            <div class="type-row">
+                <div class="type-label">Findings Chart</div>
+                <div class="type-opts" id="type-findings">
+                    <button class="type-btn active" data-val="bar" onclick="setType('findings','bar',this)">Vertical</button>
+                    <button class="type-btn" data-val="horizontalBar" onclick="setType('findings','horizontalBar',this)">Horizontal</button>
+                </div>
+            </div>
+            <div class="type-row">
+                <div class="type-label">Risk Chart</div>
+                <div class="type-opts" id="type-risk">
+                    <button class="type-btn active" data-val="radar" onclick="setType('risk','radar',this)">Radar</button>
+                    <button class="type-btn" data-val="bar" onclick="setType('risk','bar',this)">Bar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Colour Scheme -->
+        <div class="control-card">
+            <div class="control-card-title">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/>
+                    <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/>
+                    <circle cx="8.5"  cy="7.5"  r=".5" fill="currentColor"/>
+                    <circle cx="6.5"  cy="12.5" r=".5" fill="currentColor"/>
+                    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/>
+                </svg>
+                Colour Scheme
+            </div>
+            <div class="control-card-sub">Accent colours for chart data series</div>
+
+            <div class="scheme-grid" id="schemeGrid">
+                <div class="scheme-opt active" data-scheme="default" onclick="setScheme('default',this)">
+                    <div class="scheme-swatches">
+                        <span style="background:#f85149"></span>
+                        <span style="background:#d29922"></span>
+                        <span style="background:#58a6ff"></span>
+                        <span style="background:#3fb950"></span>
+                    </div>
+                    <div class="scheme-name">Default</div>
+                </div>
+                <div class="scheme-opt" data-scheme="neon" onclick="setScheme('neon',this)">
+                    <div class="scheme-swatches">
+                        <span style="background:#ff2d78"></span>
+                        <span style="background:#f5a623"></span>
+                        <span style="background:#7b61ff"></span>
+                        <span style="background:#00e5a0"></span>
+                    </div>
+                    <div class="scheme-name">Neon</div>
+                </div>
+                <div class="scheme-opt" data-scheme="ocean" onclick="setScheme('ocean',this)">
+                    <div class="scheme-swatches">
+                        <span style="background:#ef4444"></span>
+                        <span style="background:#f97316"></span>
+                        <span style="background:#06b6d4"></span>
+                        <span style="background:#10b981"></span>
+                    </div>
+                    <div class="scheme-name">Ocean</div>
+                </div>
+                <div class="scheme-opt" data-scheme="mono" onclick="setScheme('mono',this)">
+                    <div class="scheme-swatches">
+                        <span style="background:#f1f5f9"></span>
+                        <span style="background:#94a3b8"></span>
+                        <span style="background:#475569"></span>
+                        <span style="background:#1e293b"></span>
+                    </div>
+                    <div class="scheme-name">Mono</div>
+                </div>
+                <div class="scheme-opt" data-scheme="fire" onclick="setScheme('fire',this)">
+                    <div class="scheme-swatches">
+                        <span style="background:#dc2626"></span>
+                        <span style="background:#ea580c"></span>
+                        <span style="background:#d97706"></span>
+                        <span style="background:#ca8a04"></span>
+                    </div>
+                    <div class="scheme-name">Fire</div>
+                </div>
+                <div class="scheme-opt" data-scheme="purple" onclick="setScheme('purple',this)">
+                    <div class="scheme-swatches">
+                        <span style="background:#a855f7"></span>
+                        <span style="background:#ec4899"></span>
+                        <span style="background:#6366f1"></span>
+                        <span style="background:#14b8a6"></span>
+                    </div>
+                    <div class="scheme-name">Purple</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Display Options -->
+        <div class="control-card">
+            <div class="control-card-title">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+                </svg>
+                Display Options
+            </div>
+            <div class="control-card-sub">Fine-tune chart appearance</div>
+
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <div class="toggle-name">Show Legends</div>
+                    <div class="toggle-desc">Display label legends on charts</div>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="opt-legends" onchange="updatePreview()">
+                    <span class="toggle-track"></span>
+                </label>
+            </div>
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <div class="toggle-name">Show Tooltips</div>
+                    <div class="toggle-desc">Interactive hover tooltips</div>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="opt-tooltips" checked onchange="updatePreview()">
+                    <span class="toggle-track"></span>
+                </label>
+            </div>
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <div class="toggle-name">Animate on Load</div>
+                    <div class="toggle-desc">Entrance animation when charts appear</div>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="opt-animate" checked onchange="updatePreview()">
+                    <span class="toggle-track"></span>
+                </label>
+            </div>
+            <div class="size-row">
+                <div class="type-label">Chart Size</div>
+                <div class="type-opts">
+                    <button class="type-btn" onclick="setSize('sm',this)">Small</button>
+                    <button class="type-btn active" onclick="setSize('md',this)">Medium</button>
+                    <button class="type-btn" onclick="setSize('lg',this)">Large</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- RIGHT: Live Preview -->
+    <div class="preview-col">
+        <div class="preview-header">
+            <span class="preview-label">Live Preview</span>
+            <span class="preview-sub">Updates as you change settings</span>
+        </div>
+
+        <div class="preview-grid" id="previewGrid">
+
+            <div class="preview-chart-card" id="prev-severity">
+                <div class="preview-chart-title">Severity Breakdown</div>
+                <div class="chart-canvas-wrap" style="height:170px;">
+                    <canvas id="prevSeverityChart"></canvas>
+                    <div class="donut-center-label" id="prevDonutLabel" style="display:flex;">
+                        <span class="donut-total">12</span>
+                        <span class="donut-sub-label">Total</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="preview-chart-card" id="prev-type">
+                <div class="preview-chart-title">Findings by Type</div>
+                <canvas id="prevTypeChart" style="max-height:170px;"></canvas>
+            </div>
+
+            <div class="preview-chart-card" id="prev-radar">
+                <div class="preview-chart-title">Risk Distribution</div>
+                <canvas id="prevRadarChart" style="max-height:170px;"></canvas>
+            </div>
+
+            <div class="preview-chart-card hidden" id="prev-timeline">
+                <div class="preview-chart-title">Scan Timeline</div>
+                <canvas id="prevTimelineChart" style="max-height:170px;"></canvas>
+            </div>
+
+            <div class="preview-chart-card hidden" id="prev-score">
+                <div class="preview-chart-title">Risk Score Gauge</div>
+                <canvas id="prevScoreChart" style="max-height:170px;"></canvas>
+            </div>
+
+        </div>
+
+        <div class="preview-note">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            Preview uses sample data. Hit <strong>Save Settings</strong> to apply to the dashboard.
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/chart.min.js') }}"></script>
+<script>
+/* ─── State ─── */
+const DEFAULTS = {
+    visibility: { severity:true, type:true, radar:true, timeline:false, score:false },
+    types:  { severity:'doughnut', findings:'bar', risk:'radar' },
+    scheme: 'default',
+    opts:   { legends:false, tooltips:true, animate:true },
+    size:   'md'
+};
+
+const SCHEMES = {
+    default: ['#f85149','#d29922','#58a6ff','#3fb950'],
+    neon:    ['#ff2d78','#f5a623','#7b61ff','#00e5a0'],
+    ocean:   ['#ef4444','#f97316','#06b6d4','#10b981'],
+    mono:    ['#f1f5f9','#94a3b8','#475569','#1e293b'],
+    fire:    ['#dc2626','#ea580c','#d97706','#ca8a04'],
+    purple:  ['#a855f7','#ec4899','#6366f1','#14b8a6']
+};
+
+let state = JSON.parse(localStorage.getItem('sg-analytics') || 'null') || JSON.parse(JSON.stringify(DEFAULTS));
+let charts = {};
+
+/* ─── Init ─── */
+document.addEventListener('DOMContentLoaded', () => {
+    applyStateToUI();
+    buildAllCharts();
+});
+
+function applyStateToUI() {
+    // visibility toggles
+    Object.entries(state.visibility).forEach(([k,v]) => {
+        const el = document.getElementById('vis-' + k);
+        if (el) el.checked = v;
+        const card = document.getElementById('prev-' + k);
+        if (card) card.classList.toggle('hidden', !v);
+    });
+    // type buttons
+    Object.entries(state.types).forEach(([chart, val]) => {
+        document.querySelectorAll(`#type-${chart} .type-btn`).forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.val === val);
+        });
+    });
+    // scheme
+    document.querySelectorAll('.scheme-opt').forEach(opt => {
+        opt.classList.toggle('active', opt.dataset.scheme === state.scheme);
+    });
+    // opts
+    Object.entries(state.opts).forEach(([k,v]) => {
+        const el = document.getElementById('opt-' + k);
+        if (el) el.checked = v;
+    });
+}
+
+/* ─── Chart building ─── */
+const SAMPLE = { critical:3, high:4, medium:3, low:2 };
+const isDark = () => !document.documentElement.hasAttribute('data-theme');
+
+function chartColors() { return SCHEMES[state.scheme] || SCHEMES.default; }
+
+function gridColor()  { return isDark() ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)'; }
+function tickColor()  { return isDark() ? '#6e7681' : '#9ca3af'; }
+function animDur()    { return state.opts.animate ? 600 : 0; }
+function pluginsBase() {
+    return {
+        legend:  { display: state.opts.legends, labels:{ color: tickColor(), font:{size:11} } },
+        tooltip: { enabled: state.opts.tooltips }
+    };
+}
+
+function buildAllCharts() {
+    buildSeverity();
+    buildType();
+    buildRadar();
+    buildTimeline();
+    buildScore();
+}
+
+function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+
+function buildSeverity() {
+    destroyChart('severity');
+    const ctx = document.getElementById('prevSeverityChart');
+    if (!ctx) return;
+    const t = state.types.severity;
+    const label = document.getElementById('prevDonutLabel');
+    if (label) label.style.display = (t === 'doughnut') ? 'flex' : 'none';
+
+    charts.severity = new Chart(ctx, {
+        type: t,
+        data: {
+            labels: ['Critical','High','Medium','Low'],
+            datasets: [{ data: [3,4,3,2], backgroundColor: chartColors(), borderWidth:0, hoverOffset:4 }]
+        },
+        options: {
+            cutout: t === 'doughnut' ? '68%' : undefined,
+            plugins: { ...pluginsBase(),
+                tooltip: { enabled: state.opts.tooltips, callbacks:{
+                    label: c => ` ${c.label}: ${c.raw}`
+                }}
+            },
+            animation: { duration: animDur() }
+        }
+    });
+}
+
+function buildType() {
+    destroyChart('type');
+    const ctx = document.getElementById('prevTypeChart');
+    if (!ctx) return;
+    const isH = state.types.findings === 'horizontalBar';
+    charts.type = new Chart(ctx, {
+        type: isH ? 'bar' : 'bar',
+        data: {
+            labels: ['Error-Based','Boolean','Time-Based','Union','Other'],
+            datasets:[{
+                label:'Count',
+                data:[3,4,2,2,1],
+                backgroundColor: chartColors().map(c => c + 'cc'),
+                borderRadius:4, borderWidth:0
+            }]
+        },
+        options: {
+            indexAxis: isH ? 'y' : 'x',
+            plugins: pluginsBase(),
+            scales: {
+                x:{ grid:{color:gridColor()}, ticks:{color:tickColor(),font:{size:10}} },
+                y:{ grid:{color:gridColor()}, ticks:{color:tickColor(),font:{size:10}}, beginAtZero:true }
+            },
+            animation: { duration: animDur() }
+        }
+    });
+}
+
+function buildRadar() {
+    destroyChart('radar');
+    const ctx = document.getElementById('prevRadarChart');
+    if (!ctx) return;
+    const col = chartColors();
+    if (state.types.risk === 'bar') {
+        charts.radar = new Chart(ctx, {
+            type:'bar',
+            data:{
+                labels:['SQLi','Auth','XSS','CSRF','RCE'],
+                datasets:[{
+                    label:'Risk',
+                    data:[80,60,40,20,10],
+                    backgroundColor: col.map(c=>c+'aa'),
+                    borderRadius:4, borderWidth:0
+                }]
+            },
+            options:{
+                plugins: pluginsBase(),
+                scales:{
+                    x:{grid:{color:gridColor()},ticks:{color:tickColor(),font:{size:10}}},
+                    y:{grid:{color:gridColor()},ticks:{color:tickColor(),font:{size:10}},suggestedMax:100}
+                },
+                animation:{duration:animDur()}
+            }
+        });
+    } else {
+        charts.radar = new Chart(ctx, {
+            type:'radar',
+            data:{
+                labels:['SQLi','Auth','XSS','CSRF','RCE'],
+                datasets:[{
+                    label:'Risk',
+                    data:[80,60,40,20,10],
+                    backgroundColor: col[0]+'28',
+                    borderColor: col[0],
+                    pointBackgroundColor: col[0],
+                    borderWidth:1.5
+                }]
+            },
+            options:{
+                plugins: pluginsBase(),
+                scales:{ r:{
+                    grid:{color:gridColor()},
+                    pointLabels:{color:tickColor(),font:{size:10}},
+                    ticks:{display:false},
+                    suggestedMin:0, suggestedMax:100
+                }},
+                animation:{duration:animDur()}
+            }
+        });
+    }
+}
+
+function buildTimeline() {
+    destroyChart('timeline');
+    const ctx = document.getElementById('prevTimelineChart');
+    if (!ctx) return;
+    const col = chartColors();
+    charts.timeline = new Chart(ctx, {
+        type:'line',
+        data:{
+            labels:['Jan','Feb','Mar','Apr','May','Jun'],
+            datasets:[{
+                label:'Scans',
+                data:[2,5,3,8,4,9],
+                borderColor: col[2],
+                backgroundColor: col[2]+'28',
+                fill:true, tension:0.4,
+                pointRadius:3, borderWidth:2
+            }]
+        },
+        options:{
+            plugins: pluginsBase(),
+            scales:{
+                x:{grid:{color:gridColor()},ticks:{color:tickColor(),font:{size:10}}},
+                y:{grid:{color:gridColor()},ticks:{color:tickColor(),font:{size:10}},beginAtZero:true}
+            },
+            animation:{duration:animDur()}
+        }
+    });
+}
+
+function buildScore() {
+    destroyChart('score');
+    const ctx = document.getElementById('prevScoreChart');
+    if (!ctx) return;
+    const col = chartColors();
+    charts.score = new Chart(ctx, {
+        type:'doughnut',
+        data:{
+            labels:['Risk','Remaining'],
+            datasets:[{
+                data:[65,35],
+                backgroundColor:[col[0], isDark()?'#21262d':'#e2e6ee'],
+                borderWidth:0,
+                circumference:180,
+                rotation:-90
+            }]
+        },
+        options:{
+            cutout:'72%',
+            plugins:{ legend:{display:false}, tooltip:{enabled:false} },
+            animation:{duration:animDur()}
+        }
+    });
+}
+
+/* ─── Controls ─── */
+function updatePreview() {
+    // visibility
+    ['severity','type','radar','timeline','score'].forEach(k => {
+        const el = document.getElementById('vis-' + k);
+        if (!el) return;
+        state.visibility[k] = el.checked;
+        const card = document.getElementById('prev-' + k);
+        if (card) card.classList.toggle('hidden', !el.checked);
+    });
+    // opts
+    ['legends','tooltips','animate'].forEach(k => {
+        const el = document.getElementById('opt-' + k);
+        if (el) state.opts[k] = el.checked;
+    });
+    buildAllCharts();
+}
+
+function setType(chart, val, btn) {
+    state.types[chart === 'severity' ? 'severity' : chart === 'findings' ? 'findings' : 'risk'] = val;
+    btn.closest('.type-opts').querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    buildAllCharts();
+}
+
+function setScheme(name, el) {
+    state.scheme = name;
+    document.querySelectorAll('.scheme-opt').forEach(o => o.classList.remove('active'));
+    el.classList.add('active');
+    buildAllCharts();
+}
+
+function setSize(sz, btn) {
+    state.size = sz;
+    btn.closest('.type-opts').querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const h = {sm:'140px', md:'170px', lg:'210px'}[sz];
+    document.querySelectorAll('.preview-chart-card canvas').forEach(c => c.style.maxHeight = h);
+    document.querySelectorAll('.chart-canvas-wrap').forEach(c => c.style.height = h);
+    buildAllCharts();
+}
+
+function saveAndApply() {
+    localStorage.setItem('sg-analytics', JSON.stringify(state));
+    const btn = document.querySelector('.btn-primary');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Saved!';
+    btn.style.background = '#3fb950';
+    setTimeout(() => { btn.innerHTML = orig; btn.style.background = ''; }, 2000);
+}
+
+function resetAllSettings() {
+    state = JSON.parse(JSON.stringify(DEFAULTS));
+    applyStateToUI();
+    buildAllCharts();
+}
+</script>
+{% endblock %}

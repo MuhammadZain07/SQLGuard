@@ -1,26 +1,41 @@
 {% extends "base.html" %}
-{% block title %}Dashboard — SQLi Scanner{% endblock %}
+{% block title %}Dashboard — SQLGuard{% endblock %}
 {% block breadcrumb %}Dashboard{% endblock %}
- 
+
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/scan.css') }}">
 {% endblock %}
- 
+
 {% block content %}
- 
-<!-- ── URL Bar + Run Scan ── -->
+
+<!-- ── Scan Bar ── -->
 <div class="scan-bar">
     <input type="text" id="targetUrl" class="scan-input"
-           placeholder="https://example.com/login" autocomplete="off">
+           placeholder="https://target.com/login?id=1" autocomplete="off">
     <button class="scan-btn" id="scanBtn" onclick="startScan()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
             <polygon points="5 3 19 12 5 21 5 3"/>
         </svg>
         Run Scan
     </button>
+    <button class="charts-toggle-btn" id="chartsToggleBtn" onclick="toggleCharts()" title="Toggle charts">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="20" x2="18" y2="10"/>
+            <line x1="12" y1="20" x2="12" y2="4"/>
+            <line x1="6"  y1="20" x2="6"  y2="14"/>
+        </svg>
+        Charts
+    </button>
 </div>
- 
-<!-- ── Progress Bar (hidden until scan starts) ── -->
+
+<!-- ── Charts Panel (visibility/type driven by analytics settings) ── -->
+<div class="charts-panel" id="chartsPanel" style="display:none;">
+    <div class="charts-grid" id="chartsGrid">
+        <!-- rendered by JS based on saved analytics settings -->
+    </div>
+</div>
+
+<!-- ── Progress ── -->
 <div class="progress-wrap" id="progressWrap" style="display:none;">
     <div class="progress-bar-bg">
         <div class="progress-bar-fill" id="progressBar"></div>
@@ -28,19 +43,17 @@
     <span class="progress-label" id="progressLabel">Initializing...</span>
     <span class="progress-pct" id="progressPct">0%</span>
 </div>
- 
-<!-- ── Terminal Output (hidden until scan starts) ── -->
+
+<!-- ── Terminal ── -->
 <div class="terminal-wrap" id="terminalWrap" style="display:none;">
     <div class="terminal-header">
-        <span class="dot red"></span>
-        <span class="dot yellow"></span>
-        <span class="dot green"></span>
-        <span class="terminal-title">sqli-scanner — output</span>
+        <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+        <span class="terminal-title">sqli-scanner — live output</span>
     </div>
     <div class="terminal-box" id="terminalBox"></div>
 </div>
- 
-<!-- ── Stat Cards (hidden until scan completes) ── -->
+
+<!-- ── Stat Cards ── -->
 <div class="stat-row" id="statRow" style="display:none;">
     <div class="stat-card total">
         <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -86,9 +99,201 @@
         <div class="stat-sub">monitor</div>
     </div>
 </div>
- 
+
 {% endblock %}
- 
+
 {% block extra_js %}
 <script src="{{ url_for('static', filename='js/scan.js') }}"></script>
+<script>
+/* ── Analytics settings from localStorage ── */
+const ANALYTICS_DEFAULTS = {
+    visibility: { severity:true, type:true, radar:true, timeline:false, score:false },
+    types:      { severity:'doughnut', findings:'bar', risk:'radar' },
+    scheme:     'default',
+    opts:       { legends:false, tooltips:true, animate:true },
+    size:       'md'
+};
+const SCHEMES = {
+    default: ['#f85149','#d29922','#58a6ff','#3fb950'],
+    neon:    ['#ff2d78','#f5a623','#7b61ff','#00e5a0'],
+    ocean:   ['#ef4444','#f97316','#06b6d4','#10b981'],
+    mono:    ['#f1f5f9','#94a3b8','#475569','#1e293b'],
+    fire:    ['#dc2626','#ea580c','#d97706','#ca8a04'],
+    purple:  ['#a855f7','#ec4899','#6366f1','#14b8a6']
+};
+
+let aSettings = JSON.parse(localStorage.getItem('sg-analytics') || 'null') || JSON.parse(JSON.stringify(ANALYTICS_DEFAULTS));
+let chartInstances = {};
+let chartsVisible = false;
+let chartsBuilt = false;
+
+/* ── Chart data (updated on scan complete) ── */
+let scanData = { critical:0, high:0, medium:0, low:0 };
+
+function toggleCharts() {
+    chartsVisible = !chartsVisible;
+    const panel = document.getElementById('chartsPanel');
+    const btn   = document.getElementById('chartsToggleBtn');
+    panel.style.display = chartsVisible ? 'block' : 'none';
+    btn.classList.toggle('active', chartsVisible);
+    if (chartsVisible && !chartsBuilt) buildDashboardCharts();
+}
+
+function isDark() { return !document.documentElement.hasAttribute('data-theme'); }
+function chartColors() { return SCHEMES[aSettings.scheme] || SCHEMES.default; }
+function gridCol()  { return isDark() ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)'; }
+function tickCol()  { return isDark() ? '#6e7681' : '#9ca3af'; }
+function animDur()  { return aSettings.opts.animate ? 600 : 0; }
+function plugBase() {
+    return {
+        legend:  { display: aSettings.opts.legends, labels:{color:tickCol(),font:{size:11}} },
+        tooltip: { enabled: aSettings.opts.tooltips }
+    };
+}
+function chartHeight() { return {sm:'140px',md:'180px',lg:'220px'}[aSettings.size] || '180px'; }
+
+function buildDashboardCharts() {
+    const grid = document.getElementById('chartsGrid');
+    grid.innerHTML = '';
+    const vis = aSettings.visibility;
+    const d   = scanData;
+
+    const CHART_DEFS = [
+        { key:'severity', title:'Severity Breakdown', sub:'Finding severity distribution' },
+        { key:'type',     title:'Findings by Type',   sub:'Vulnerability categories' },
+        { key:'radar',    title:'Risk Distribution',  sub:'Risk category spread' },
+        { key:'timeline', title:'Scan Timeline',      sub:'Activity over time' },
+        { key:'score',    title:'Risk Score Gauge',   sub:'Overall risk level' }
+    ];
+
+    CHART_DEFS.forEach(def => {
+        if (!vis[def.key]) return;
+        const card = document.createElement('div');
+        card.className = 'chart-card';
+        card.id = 'dash-chart-' + def.key;
+        card.innerHTML = `
+            <div class="chart-card-title">${def.title}</div>
+            <div class="chart-card-sub">${def.sub}</div>
+            <div class="chart-canvas-wrap" style="height:${chartHeight()};">
+                <canvas id="dc-${def.key}"></canvas>
+                ${def.key==='severity'?'<div class="donut-center-label" id="dc-donut-label" style="display:flex;"><span class="donut-total" id="dc-donut-total">0</span><span class="donut-sub-label">Total</span></div>':''}
+            </div>`;
+        grid.appendChild(card);
+    });
+
+    // Build each visible chart
+    if (vis.severity) buildDashSeverity(d);
+    if (vis.type)     buildDashType(d);
+    if (vis.radar)    buildDashRadar(d);
+    if (vis.timeline) buildDashTimeline();
+    if (vis.score)    buildDashScore(d);
+    chartsBuilt = true;
+}
+
+function destroyDash(k) { if (chartInstances[k]) { chartInstances[k].destroy(); delete chartInstances[k]; } }
+
+function buildDashSeverity(d) {
+    destroyDash('severity');
+    const ctx = document.getElementById('dc-severity');
+    if (!ctx) return;
+    const t   = aSettings.types.severity;
+    const tot = d.critical + d.high + d.medium + d.low;
+    const lbl = document.getElementById('dc-donut-label');
+    const num = document.getElementById('dc-donut-total');
+    if (lbl) lbl.style.display = t === 'doughnut' ? 'flex' : 'none';
+    if (num) num.textContent = tot;
+    chartInstances.severity = new Chart(ctx, {
+        type: t,
+        data: {
+            labels: ['Critical','High','Medium','Low'],
+            datasets:[{ data:[d.critical||0.001,d.high||0.001,d.medium||0.001,d.low||0.001],
+                backgroundColor: chartColors(), borderWidth:0, hoverOffset:4 }]
+        },
+        options: { cutout: t==='doughnut'?'70%':undefined,
+            plugins:{ ...plugBase(), tooltip:{enabled:aSettings.opts.tooltips,
+                callbacks:{label:c=>` ${c.label}: ${c.raw<1?0:c.raw}`}}},
+            animation:{duration:animDur()} }
+    });
+}
+
+function buildDashType(d) {
+    destroyDash('type');
+    const ctx = document.getElementById('dc-type');
+    if (!ctx) return;
+    const isH = aSettings.types.findings === 'horizontalBar';
+    chartInstances.type = new Chart(ctx, {
+        type:'bar',
+        data:{ labels:['Error-Based','Boolean','Time-Based','Union','Other'],
+            datasets:[{label:'Count', data:[d.critical,d.high,d.medium,d.low,0],
+                backgroundColor:chartColors().map(c=>c+'cc'), borderRadius:4, borderWidth:0}] },
+        options:{ indexAxis:isH?'y':'x', plugins:plugBase(),
+            scales:{ x:{grid:{color:gridCol()},ticks:{color:tickCol(),font:{size:10}}},
+                     y:{grid:{color:gridCol()},ticks:{color:tickCol(),font:{size:10}},beginAtZero:true} },
+            animation:{duration:animDur()} }
+    });
+}
+
+function buildDashRadar(d) {
+    destroyDash('radar');
+    const ctx = document.getElementById('dc-radar');
+    if (!ctx) return;
+    const col = chartColors();
+    if (aSettings.types.risk === 'bar') {
+        chartInstances.radar = new Chart(ctx,{type:'bar',
+            data:{labels:['SQLi','Auth','XSS','CSRF','RCE'],
+                datasets:[{label:'Risk',data:[Math.min(d.critical*20,100),Math.min(d.high*15,100),Math.min(d.medium*10,100),Math.min(d.low*5,100),0],
+                    backgroundColor:col.map(c=>c+'aa'),borderRadius:4,borderWidth:0}]},
+            options:{plugins:plugBase(),scales:{x:{grid:{color:gridCol()},ticks:{color:tickCol(),font:{size:10}}},
+                y:{grid:{color:gridCol()},ticks:{color:tickCol(),font:{size:10}},suggestedMax:100}},animation:{duration:animDur()}}
+        });
+    } else {
+        chartInstances.radar = new Chart(ctx,{type:'radar',
+            data:{labels:['SQLi','Auth','XSS','CSRF','RCE'],
+                datasets:[{label:'Risk',data:[Math.min(d.critical*20,100),Math.min(d.high*15,100),Math.min(d.medium*10,100),Math.min(d.low*5,100),0],
+                    backgroundColor:col[0]+'28',borderColor:col[0],pointBackgroundColor:col[0],borderWidth:1.5}]},
+            options:{plugins:plugBase(),scales:{r:{grid:{color:gridCol()},
+                pointLabels:{color:tickCol(),font:{size:10}},ticks:{display:false},suggestedMin:0,suggestedMax:100}},
+                animation:{duration:animDur()}}
+        });
+    }
+}
+
+function buildDashTimeline() {
+    destroyDash('timeline');
+    const ctx = document.getElementById('dc-timeline');
+    if (!ctx) return;
+    const col = chartColors();
+    chartInstances.timeline = new Chart(ctx,{type:'line',
+        data:{labels:['Jan','Feb','Mar','Apr','May','Jun'],
+            datasets:[{label:'Scans',data:[2,5,3,8,4,9],borderColor:col[2],
+                backgroundColor:col[2]+'28',fill:true,tension:0.4,pointRadius:3,borderWidth:2}]},
+        options:{plugins:plugBase(),scales:{x:{grid:{color:gridCol()},ticks:{color:tickCol(),font:{size:10}}},
+            y:{grid:{color:gridCol()},ticks:{color:tickCol(),font:{size:10}},beginAtZero:true}},
+            animation:{duration:animDur()}}
+    });
+}
+
+function buildDashScore(d) {
+    destroyDash('score');
+    const ctx = document.getElementById('dc-score');
+    if (!ctx) return;
+    const col  = chartColors();
+    const risk = Math.min((d.critical*25 + d.high*10 + d.medium*5), 100);
+    chartInstances.score = new Chart(ctx,{type:'doughnut',
+        data:{labels:['Risk','Safe'],
+            datasets:[{data:[risk,100-risk],
+                backgroundColor:[col[0], isDark()?'#21262d':'#e2e6ee'],
+                borderWidth:0, circumference:180, rotation:-90}]},
+        options:{cutout:'72%',plugins:{legend:{display:false},tooltip:{enabled:false}},
+            animation:{duration:animDur()}}
+    });
+}
+
+// Refresh charts on scan complete
+document.addEventListener('scanComplete', e => {
+    const detail = e.detail || {};
+    scanData = { critical: detail.critical||0, high: detail.high||0, medium: detail.medium||0, low: detail.low||0 };
+    if (chartsVisible) { chartsBuilt = false; buildDashboardCharts(); }
+});
+</script>
 {% endblock %}
