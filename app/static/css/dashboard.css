@@ -1,9 +1,9 @@
 /* dashboard.css */
 
-/* 5 cards in a row */
+/* 4 cards in a row */
 .stat-row {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 14px;
     margin-bottom: 20px;
 }
