@@ -249,9 +249,11 @@ class WebCrawler:
     # ------------------------------------------------------------------
 
     def _normalize_url(self, url: str) -> str:
-        """Remove fragments; keep scheme + netloc + path + query."""
+        """Remove fragments and trailing slashes; keep scheme + netloc + path + query."""
         parsed = urlparse(url)
-        return urlunparse(parsed._replace(fragment=""))
+        # Strip trailing slash from path (unless it's the root "/")
+        path = parsed.path.rstrip("/") or "/"
+        return urlunparse(parsed._replace(path=path, fragment=""))
 
     def _path_key(self, url: str) -> str:
         """

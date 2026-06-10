@@ -161,6 +161,7 @@ class PayloadInjector:
                 "response_text": response.text,
                 "response_time_ms": elapsed_ms,
                 "status_code": response.status_code,
+                "timed_out": False,
             }
 
         except requests.Timeout:

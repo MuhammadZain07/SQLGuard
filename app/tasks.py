@@ -195,6 +195,12 @@ def run_scan(self, scan_id: int, target_url: str, mode: str = "normal") -> dict:
 
         # Pre-load boolean payload pairs info
         boolean_payloads = PAYLOADS.get("boolean_based", [])
+        if len(boolean_payloads) % 2 != 0:
+            logger.warning(
+                "Scan #%s: boolean_based.txt has odd number of payloads (%s); "
+                "last payload will be ignored.",
+                scan_id, len(boolean_payloads),
+            )
         boolean_false_map: dict[str, str] = {}
         for i in range(0, len(boolean_payloads) - 1, 2):
             boolean_false_map[boolean_payloads[i]] = boolean_payloads[i + 1]
@@ -213,12 +219,14 @@ def run_scan(self, scan_id: int, target_url: str, mode: str = "normal") -> dict:
             payload_pool = non_boolean_payloads
 
         vuln_count = 0
+        _cancel_check_counter = 0
+        _CANCEL_CHECK_INTERVAL = 10  # check DB for cancel every N payloads
 
         # Inject and analyze target-by-target (and payload-by-payload) on the fly
         for target in injection_targets:
             target_key = (target["url"], target["parameter"])
 
-            # Check if scan has been cancelled
+            # Check if scan has been cancelled (per target)
             db.session.expire(scan)
             if scan.status in ("failed", "stopped"):
                 logger.info("Scan #%s cancelled/stopped during injection phase.", scan_id)
@@ -231,11 +239,15 @@ def run_scan(self, scan_id: int, target_url: str, mode: str = "normal") -> dict:
 
             # 1. Test error, union, time based payloads
             for payload_info in payload_pool:
-                # Check cancellation in the inner loop too
-                db.session.expire(scan)
-                if scan.status in ("failed", "stopped"):
-                    logger.info("Scan #%s cancelled/stopped during payload run.", scan_id)
-                    return {"scan_id": scan_id, "status": "stopped"}
+                # Check cancellation periodically (not every payload) to
+                # avoid hammering the DB with an extra query per request
+                _cancel_check_counter += 1
+                if _cancel_check_counter >= _CANCEL_CHECK_INTERVAL:
+                    _cancel_check_counter = 0
+                    db.session.expire(scan)
+                    if scan.status in ("failed", "stopped"):
+                        logger.info("Scan #%s cancelled/stopped during payload run.", scan_id)
+                        return {"scan_id": scan_id, "status": "stopped"}
 
                 result = injector.send_request(target, payload_info)
                 if result:
@@ -246,6 +258,7 @@ def run_scan(self, scan_id: int, target_url: str, mode: str = "normal") -> dict:
                             vuln_count += 1
                             confirmed_vulns.add(target_key)
                             target_vulnerable = True
+                            scan.vuln_count = vuln_count
                             db.session.commit()
                         break # Early exit: skip other payloads for this target
 
@@ -259,10 +272,13 @@ def run_scan(self, scan_id: int, target_url: str, mode: str = "normal") -> dict:
                 boolean_pairs = list(boolean_false_map.items())
 
             for true_pl, false_pl in boolean_pairs:
-                db.session.expire(scan)
-                if scan.status in ("failed", "stopped"):
-                    logger.info("Scan #%s cancelled/stopped during boolean pairing.", scan_id)
-                    return {"scan_id": scan_id, "status": "stopped"}
+                _cancel_check_counter += 1
+                if _cancel_check_counter >= _CANCEL_CHECK_INTERVAL:
+                    _cancel_check_counter = 0
+                    db.session.expire(scan)
+                    if scan.status in ("failed", "stopped"):
+                        logger.info("Scan #%s cancelled/stopped during boolean pairing.", scan_id)
+                        return {"scan_id": scan_id, "status": "stopped"}
 
                 true_info = {"attack_type": "boolean_based", "payload": true_pl}
                 true_result = injector.send_request(target, true_info)
@@ -280,6 +296,7 @@ def run_scan(self, scan_id: int, target_url: str, mode: str = "normal") -> dict:
                     if _save_vulnerability(scan_id, combined):
                         vuln_count += 1
                         confirmed_vulns.add(target_key)
+                        scan.vuln_count = vuln_count
                         db.session.commit()
                     break # Early exit: skip other boolean pairs for this target
 

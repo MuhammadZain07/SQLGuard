@@ -16,7 +16,7 @@ DB_ERROR_PATTERNS: list[tuple[str, str]] = [
     (r"quoted string not properly terminated", "MSSQL"),
     (r"microsoft ole db provider for sql server", "MSSQL"),
     (r"odbc sql server driver", "MSSQL"),
-    (r"syntax error.*sql", "Generic SQL"),
+    (r"syntax error.{0,100}sql", "Generic SQL"),
     (r"ora-\d{5}", "Oracle"),
     (r"oracle.*driver", "Oracle"),
     (r"pg_query\(\)", "PostgreSQL"),
