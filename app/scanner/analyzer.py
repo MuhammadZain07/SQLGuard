@@ -8,25 +8,90 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 DB_ERROR_PATTERNS: list[tuple[str, str]] = [
-    # (regex pattern, database name)
+    # MySQL
     (r"you have an error in your sql syntax", "MySQL"),
     (r"warning: mysql", "MySQL"),
     (r"mysql_fetch_array\(\)", "MySQL"),
+    (r"mysql_fetch_assoc\(\)", "MySQL"),
+    (r"mysql_fetch_row\(\)", "MySQL"),
+    (r"mysql_num_rows\(\)", "MySQL"),
+    (r"mysql_query\(\)", "MySQL"),
+    (r"com\.mysql\.jdbc\.exceptions", "MySQL"),
+    (r"jdbc\.mysql", "MySQL"),
+    (r"mysql server version for the right syntax", "MySQL"),
+    (r"supplied argument is not a valid mysql", "MySQL"),
+    (r"column count doesn't match value count", "MySQL"),
+    (r"table '.*' doesn't exist", "MySQL"),
+    (r"unknown column '.*' in 'field list'", "MySQL"),
+
+    # MSSQL
     (r"unclosed quotation mark after the character string", "MSSQL"),
     (r"quoted string not properly terminated", "MSSQL"),
     (r"microsoft ole db provider for sql server", "MSSQL"),
     (r"odbc sql server driver", "MSSQL"),
-    (r"syntax error.{0,100}sql", "Generic SQL"),
+    (r"microsoft jet database engine", "MSSQL"),
+    (r"error converting data type", "MSSQL"),
+    (r"80040e14", "MSSQL"),
+    (r"80040e07", "MSSQL"),
+    (r"mssql_query\(\)", "MSSQL"),
+    (r"odbc microsoft access", "MSSQL"),
+    (r"\[microsoft\]\[odbc", "MSSQL"),
+    (r"incorrect syntax near", "MSSQL"),
+
+    # Oracle
     (r"ora-\d{5}", "Oracle"),
     (r"oracle.*driver", "Oracle"),
+    (r"sql command not properly ended", "Oracle"),
+    (r"ora-01756", "Oracle"),
+    (r"ora-00933", "Oracle"),
+    (r"ora-00907", "Oracle"),
+    (r"ora-00942", "Oracle"),
+    (r"oracle error", "Oracle"),
+    (r"oracle.*exception", "Oracle"),
+
+    # PostgreSQL
     (r"pg_query\(\)", "PostgreSQL"),
+    (r"pg_exec\(\)", "PostgreSQL"),
     (r"psql.*error", "PostgreSQL"),
     (r"postgresql.*error", "PostgreSQL"),
+    (r"unterminated quoted string", "PostgreSQL"),
+    (r"supplied argument is not a valid pg", "PostgreSQL"),
+    (r"pg_num_rows\(\)", "PostgreSQL"),
+    (r"pgsql.*query failed", "PostgreSQL"),
+    (r"error:.*syntax error at or near", "PostgreSQL"),
+
+    # SQLite
     (r"sqlite3\.operationalerror", "SQLite"),
     (r"sqlite_error", "SQLite"),
+    (r"sqlite.*syntax error", "SQLite"),
+    (r"sqlite_step\(\)", "SQLite"),
+    (r"warning.*sqlite", "SQLite"),
+    (r"unrecognized token", "SQLite"),
+
+    # MariaDB
     (r"sql syntax.*mariadb", "MariaDB"),
+    (r"mariadb.*syntax", "MariaDB"),
+    (r"mariadb.*error", "MariaDB"),
+
+    # DB2
+    (r"db2 sql error", "DB2"),
+    (r"cli driver.*db2", "DB2"),
+    (r"com\.ibm\.db2", "DB2"),
+    (r"sqlstate\[", "DB2"),
+
+    # Generic SQL
+    (r"syntax error.{0,100}sql", "Generic SQL"),
     (r"division by zero", "Generic SQL"),
-    (r"supplied argument is not a valid (mysql|postgresql|oracle)", "Generic SQL"),
+    (r"pdoexception", "Generic SQL"),
+    (r"invalid query", "Generic SQL"),
+    (r"sql syntax error", "Generic SQL"),
+    (r"query failed", "Generic SQL"),
+    (r"sql error", "Generic SQL"),
+    (r"database error", "Generic SQL"),
+    (r"sql.*exception", "Generic SQL"),
+    (r"access.*violation", "Generic SQL"),
+    (r"warning.*mysql_", "Generic SQL"),
+    (r"valid mysql result", "Generic SQL"),
 ]
 
 # Pre-compile for performance
