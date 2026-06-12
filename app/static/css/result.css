@@ -26,6 +26,7 @@
 .risk-score.risk-high     { color: var(--severity-high); }
 .risk-score.risk-medium   { color: var(--severity-medium); }
 .risk-score.risk-low      { color: var(--severity-low); }
+.risk-score.risk-secure   { color: var(--severity-medium); }
 
 .risk-label-sub {
     font-size: 11px;
@@ -47,6 +48,7 @@
 .risk-badge.risk-high     { background: rgba(210,153,34,0.15); color: var(--severity-high);     border: 1px solid rgba(210,153,34,0.3); }
 .risk-badge.risk-medium   { background: rgba(63,185,80,0.15);  color: var(--severity-medium);   border: 1px solid rgba(63,185,80,0.3); }
 .risk-badge.risk-low      { background: rgba(88,166,255,0.15); color: var(--severity-low);      border: 1px solid rgba(88,166,255,0.3); }
+.risk-badge.risk-secure   { background: rgba(63,185,80,0.15);  color: var(--severity-medium);   border: 1px solid rgba(63,185,80,0.3); }
 
 /* Severity Bars */
 .severity-bars { text-align: left; margin-top: 8px; }

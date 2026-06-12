@@ -53,9 +53,9 @@ class PayloadInjector:
     # have enough headroom for network latency and server overhead.
     REQUEST_TIMEOUT = 15
 
-    # Fix 10: 150ms delay between requests — avoids hammering the target
+    # Fix 10: 100ms delay between requests — avoids hammering the target
     # and getting the scanner's IP blocked.
-    REQUEST_DELAY_S = 0.15
+    REQUEST_DELAY_S = 0.10
 
     def __init__(self, targets: list[dict], mode: str = "normal"):
         self.targets = targets
@@ -73,7 +73,7 @@ class PayloadInjector:
             self.REQUEST_DELAY_S = 0.02
             self.REQUEST_TIMEOUT = 12
         else:
-            self.REQUEST_DELAY_S = 0.15
+            self.REQUEST_DELAY_S = 0.10
             self.REQUEST_TIMEOUT = 15
 
     # ------------------------------------------------------------------

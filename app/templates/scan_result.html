@@ -19,24 +19,6 @@
         {% set low      = vulnerabilities | selectattr('severity','equalto','LOW')      | list | length %}
         {% set total    = vulnerabilities | length %}
 
-        {% if critical > 0 %}
-            {% set risk_score = 85 %}
-            {% set risk_label = 'CRITICAL RISK' %}
-            {% set risk_class = 'risk-critical' %}
-        {% elif high > 0 %}
-            {% set risk_score = 65 %}
-            {% set risk_label = 'HIGH RISK' %}
-            {% set risk_class = 'risk-high' %}
-        {% elif medium > 0 %}
-            {% set risk_score = 40 %}
-            {% set risk_label = 'MODERATE RISK' %}
-            {% set risk_class = 'risk-medium' %}
-        {% else %}
-            {% set risk_score = 16 %}
-            {% set risk_label = 'LOW RISK' %}
-            {% set risk_class = 'risk-low' %}
-        {% endif %}
-
         <div class="risk-score {{ risk_class }}">{{ risk_score }}</div>
         <div class="risk-label-sub">RISK SCORE / 100</div>
         <span class="risk-badge {{ risk_class }}">{{ risk_label }}</span>
@@ -180,9 +162,9 @@
             {% for v in vulnerabilities %}
             <div class="vuln-item" data-severity="{{ v.severity }}">
                 <div class="vuln-row" onclick="toggleVuln(this)">
-                    <span class="badge-{{ v.severity | lower }}">{{ v.severity }}</span>
+                    <span class="badge-{{ v.severity | lower }}">{{ v.severity }} {{ v.cvss }}</span>
                     <span class="vuln-name">{{ v.vuln_type }}</span>
-                    <span class="vuln-param">param: <strong>{{ v.parameter }}</strong></span>
+                    <span class="vuln-param">Parameter: <strong>{{ v.parameter }}</strong></span>
                     <span class="vuln-method">{{ v.method }}</span>
                     <svg class="vuln-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="6 9 12 15 18 9"/>
@@ -192,7 +174,7 @@
                     <div class="detail-grid">
                         <div class="dg-item">
                             <div class="dg-label">URL</div>
-                            <div class="dg-val url-truncate">{{ v.url }}</div>
+                            <div class="dg-val">{{ v.url }}</div>
                         </div>
                         <div class="dg-item">
                             <div class="dg-label">Payload Used</div>

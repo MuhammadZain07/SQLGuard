@@ -227,7 +227,14 @@ class ResponseAnalyzer:
         # Run the detectors in priority order
         error_result   = self._check_error_based(response_text)
         boolean_result = self._check_boolean_based(cache_key, response_size)
-        time_result    = self._check_time_based(response_ms, timed_out, cache_key)
+        
+        # Only run time-based check if the payload sent was actually time-based.
+        # This prevents connection drops/WAF blocks on other payloads from being flagged as time-based SQLi.
+        if attack_type == "time_based":
+            time_result = self._check_time_based(response_ms, timed_out, cache_key)
+        else:
+            time_result = {"detected": False}
+            
         union_result   = self._check_union_based(response_text)
 
         # Fix 5: baseline is set externally via set_baseline() and never
