@@ -1,8 +1,7 @@
 # app/routes/main.py
-from flask import Blueprint, render_template, abort, send_file, redirect, url_for, session, request, flash
+from flask import Blueprint, render_template, abort, redirect, url_for, session, request, flash
 from ..models.database import db, Scan, Vulnerability, User
 from .auth import login_required
-import io
 import feedparser
 
 main_bp = Blueprint("main", __name__)
@@ -290,22 +289,3 @@ def profile():
             return redirect(url_for('auth.login'))
             
     return render_template('profile.html', user=user)
-
-
-@main_bp.route("/report/<int:scan_id>/download")
-@login_required
-def download_report(scan_id):
-    scan = db.session.get(Scan, scan_id)
-    if scan is None or scan.user_id != session.get('user_id'):
-        abort(404)
-    vulns = Vulnerability.query.filter_by(scan_id=scan_id).all()
-    report_lines = [f"Scan Report — {scan.target_url}", f"Status: {scan.status}", ""]
-    for v in vulns:
-        report_lines.append(f"[{v.severity}] {v.vuln_type} at {v.url}")
-    report_bytes = "\n".join(report_lines).encode()
-    return send_file(
-        io.BytesIO(report_bytes),
-        mimetype="text/plain",
-        as_attachment=True,
-        download_name=f"report_{scan_id}.txt"
-    )

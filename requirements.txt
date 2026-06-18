@@ -13,9 +13,6 @@ redis==5.0.1
 requests==2.31.0
 beautifulsoup4==4.12.3
 
-# PDF generation
-WeasyPrint==62.3
-
 # Read .env file
 python-dotenv==1.0.1
 

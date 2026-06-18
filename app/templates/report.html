@@ -15,7 +15,7 @@
                 <th style="width: 10%;">Scan ID</th>
                 <th style="width: 50%;">Target URL</th>
                 <th style="width: 20%; text-align: center;">View</th>
-                <th style="width: 20%; text-align: center;">Download as PDF</th>
+                <th style="width: 20%; text-align: center;">Print PDF</th>
             </tr>
         </thead>
         <tbody>
@@ -33,7 +33,7 @@
                     <td style="text-align: center;">
                         <a href="{{ url_for('main.scan_results', scan_id=s.id) }}?print=true"
                            class="download-pdf-btn">
-                           Download PDF
+                           Print PDF
                         </a>
                     </td>
                 </tr>
