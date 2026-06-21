@@ -92,12 +92,12 @@
                     </div>
                 </div>
 
-                <!-- Risk Distribution -->
+                <!-- Top Vulnerable Hosts -->
                 <div class="chart-config-row">
                     <div class="chart-config-header">
                         <div class="toggle-info">
-                            <div class="toggle-name">Risk Distribution</div>
-                            <div class="toggle-desc">Radar or bar chart of risk categories</div>
+                            <div class="toggle-name">Top Vulnerable Hosts</div>
+                            <div class="toggle-desc">Horizontal or vertical bar chart of target hosts</div>
                         </div>
                         <label class="toggle-switch">
                             <input type="checkbox" id="vis-radar" checked onchange="updatePreview()">
@@ -107,8 +107,8 @@
                     <div class="chart-type-selector" id="sel-radar">
                         <span class="selector-label">Type</span>
                         <div class="type-opts" id="type-risk">
-                            <button class="type-btn active" data-val="radar" onclick="setType('risk','radar',this)">Radar</button>
-                            <button class="type-btn" data-val="bar" onclick="setType('risk','bar',this)">Bar</button>
+                            <button class="type-btn active" data-val="horizontalBar" onclick="setType('risk','horizontalBar',this)">Horizontal</button>
+                            <button class="type-btn" data-val="bar" onclick="setType('risk','bar',this)">Vertical</button>
                         </div>
                     </div>
                 </div>
