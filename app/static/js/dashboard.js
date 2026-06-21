@@ -262,6 +262,9 @@ const SCHEMES = {
 };
 
 let state = JSON.parse(localStorage.getItem('sg-analytics') || 'null') || JSON.parse(JSON.stringify(DEFAULTS));
+if (state.types.risk === 'radar') {
+    state.types.risk = 'horizontalBar';
+}
 if (state.visibility && (state.visibility.timeline !== undefined || state.visibility.score !== undefined)) {
     state.visibility = { severity: state.visibility.severity !== undefined ? state.visibility.severity : true, 
                          type: state.visibility.type !== undefined ? state.visibility.type : true, 
@@ -291,6 +294,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var chartCanvas1 = document.getElementById('topHostsChart');
     if (chartCanvas1 && typeof topHosts !== 'undefined') {
         var ctx1 = chartCanvas1.getContext('2d');
+        const isV = state.types.risk === 'bar';
         topHostsChartInstance = new Chart(ctx1, {
             type: 'bar',
             data: {
@@ -303,14 +307,21 @@ document.addEventListener('DOMContentLoaded', function () {
                 }]
             },
             options: {
-                indexAxis: 'y',
+                indexAxis: isV ? 'x' : 'y',
                 plugins: {
                     legend: { display: false },
                     tooltip: { enabled: state.opts.tooltips }
                 },
                 scales: {
-                    x: { ticks: { color: colors.text, stepSize: 1 }, grid: { color: colors.grid }, beginAtZero: true },
-                    y: { ticks: { color: colors.text }, grid: { display: false } }
+                    x: { 
+                        ticks: { color: colors.text }, 
+                        grid: { color: isV ? 'transparent' : colors.grid, display: !isV } 
+                    },
+                    y: { 
+                        ticks: { color: colors.text, stepSize: 1 }, 
+                        grid: { color: isV ? colors.grid : 'transparent', display: isV }, 
+                        beginAtZero: true 
+                    }
                 },
                 animation: { duration: state.opts.animate ? 600 : 0 }
             }
@@ -387,9 +398,11 @@ document.addEventListener('DOMContentLoaded', function () {
         const newColors = getChartColors();
         
         if (topHostsChartInstance) {
+            const isV = state.types.risk === 'bar';
             topHostsChartInstance.options.scales.x.ticks.color = newColors.text;
-            topHostsChartInstance.options.scales.x.grid.color = newColors.grid;
+            topHostsChartInstance.options.scales.x.grid.color = isV ? 'transparent' : newColors.grid;
             topHostsChartInstance.options.scales.y.ticks.color = newColors.text;
+            topHostsChartInstance.options.scales.y.grid.color = isV ? newColors.grid : 'transparent';
             topHostsChartInstance.update();
         }
         
