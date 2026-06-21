@@ -287,7 +287,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const colors = getChartColors();
 
-    // CHART 1 - Horizontal Bar: top vulnerable hosts
+    // CHART 1 - Horizontal Bar: top vulnerable hosts (dynamic scheme)
     var chartCanvas1 = document.getElementById('topHostsChart');
     if (chartCanvas1 && typeof topHosts !== 'undefined') {
         var ctx1 = chartCanvas1.getContext('2d');
@@ -298,7 +298,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 datasets: [{
                     label: 'Vulnerabilities',
                     data: topHosts.counts,
-                    backgroundColor: ['#ff2d78', '#7b61ff', '#06b6d4', '#10b981', '#f85149'],
+                    backgroundColor: getSchemeColors(),
                     borderRadius: 4
                 }]
             },
@@ -306,12 +306,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 indexAxis: 'y',
                 plugins: {
                     legend: { display: false },
-                    tooltip: { enabled: true }
+                    tooltip: { enabled: state.opts.tooltips }
                 },
                 scales: {
                     x: { ticks: { color: colors.text, stepSize: 1 }, grid: { color: colors.grid }, beginAtZero: true },
                     y: { ticks: { color: colors.text }, grid: { display: false } }
-                }
+                },
+                animation: { duration: state.opts.animate ? 600 : 0 }
             }
         });
     }
@@ -343,10 +344,11 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // CHART 3 - Bar: vulnerability categories
+    // CHART 3 - Bar: vulnerability categories (dynamic layout/scheme)
     var chartCanvas2 = document.getElementById('vulnBarChart');
     if (chartCanvas2 && typeof vulnTypes !== 'undefined') {
         var ctx2 = chartCanvas2.getContext('2d');
+        const isH = state.types.findings === 'horizontalBar';
         categoryChartInstance = new Chart(ctx2, {
             type: 'bar',
             data: {
@@ -354,16 +356,28 @@ document.addEventListener('DOMContentLoaded', function () {
                 datasets: [{
                     label: 'Findings',
                     data: [vulnTypes.error, vulnTypes.boolean, vulnTypes.time, vulnTypes.union],
-                    backgroundColor: ['#ff2d78', '#7b61ff', '#06b6d4', '#10b981'],
+                    backgroundColor: getSchemeColors().map(c => c + 'cc'),
                     borderRadius: 4
                 }]
             },
             options: {
-                plugins: { legend: { display: false } },
+                indexAxis: isH ? 'y' : 'x',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { enabled: state.opts.tooltips }
+                },
                 scales: {
-                    x: { ticks: { color: colors.text }, grid: { display: false } },
-                    y: { ticks: { color: colors.text, stepSize: 1 }, grid: { color: colors.grid }, beginAtZero: true }
-                }
+                    x: { 
+                        ticks: { color: colors.text }, 
+                        grid: { color: isH ? colors.grid : 'transparent', display: isH } 
+                    },
+                    y: { 
+                        ticks: { color: colors.text, stepSize: 1 }, 
+                        grid: { color: isH ? 'transparent' : colors.grid, display: !isH }, 
+                        beginAtZero: true 
+                    }
+                },
+                animation: { duration: state.opts.animate ? 600 : 0 }
             }
         });
     }
@@ -385,9 +399,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         
         if (categoryChartInstance) {
+            const isH = state.types.findings === 'horizontalBar';
             categoryChartInstance.options.scales.x.ticks.color = newColors.text;
+            categoryChartInstance.options.scales.x.grid.color = isH ? newColors.grid : 'transparent';
             categoryChartInstance.options.scales.y.ticks.color = newColors.text;
-            categoryChartInstance.options.scales.y.grid.color = newColors.grid;
+            categoryChartInstance.options.scales.y.grid.color = isH ? 'transparent' : newColors.grid;
             categoryChartInstance.update();
         }
     });
