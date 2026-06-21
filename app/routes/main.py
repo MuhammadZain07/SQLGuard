@@ -277,8 +277,8 @@ def profile():
             return redirect(url_for('main.profile'))
             
         elif action == 'delete_account':
-            confirm_username = request.form.get('confirm_username')
-            if confirm_username != user.username:
+            confirm_username = request.form.get('confirm_username', '').strip().lower()
+            if confirm_username != user.username.lower():
                 flash('Username confirmation does not match. Account was not deleted.', 'error')
                 return redirect(url_for('main.profile'))
                 

@@ -48,7 +48,7 @@ def signup():
     if "user_id" in session:
         return redirect(url_for("main.dashboard"))
 
-    username = request.form.get("username", "").strip()
+    username = request.form.get("username", "").strip().lower()
     password = request.form.get("password", "")
     confirm_password = request.form.get("confirm_password", "")
 
