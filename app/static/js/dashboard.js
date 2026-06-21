@@ -316,27 +316,29 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // CHART 2 - Doughnut: vulnerability severity breakdown
+    // CHART 2 - Vulnerability severity breakdown (dynamic type/scheme)
     var chartCanvasSeverity = document.getElementById('statusChart');
     if (chartCanvasSeverity && typeof vulnSeverity !== 'undefined') {
         var ctxSeverity = chartCanvasSeverity.getContext('2d');
+        const sevType = state.types.severity || 'doughnut';
         severityChartInstance = new Chart(ctxSeverity, {
-            type: 'doughnut',
+            type: sevType,
             data: {
                 labels: ['Critical', 'High', 'Medium', 'Low'],
                 datasets: [{
                     data: [vulnSeverity.critical, vulnSeverity.high, vulnSeverity.medium, vulnSeverity.low],
-                    backgroundColor: ['#f85149', '#d29922', '#58a6ff', '#3fb950'],
+                    backgroundColor: getSchemeColors(),
                     borderColor: colors.border,
-                    borderWidth: 3
+                    borderWidth: sevType === 'polarArea' ? 1 : 3
                 }]
             },
             options: {
-                cutout: '65%',
+                cutout: sevType === 'doughnut' ? '65%' : undefined,
                 plugins: {
                     legend: { display: false },
-                    tooltip: { enabled: true }
-                }
+                    tooltip: { enabled: state.opts.tooltips }
+                },
+                animation: { duration: state.opts.animate ? 600 : 0 }
             }
         });
     }
