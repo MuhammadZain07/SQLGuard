@@ -3,6 +3,7 @@ import logging
 import time
 import requests as http_requests
 from datetime import datetime, timezone
+from urllib.parse import urljoin
 
 from app import celery
 from app.models.database import db, Scan, Vulnerability
