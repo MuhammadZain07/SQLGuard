@@ -256,7 +256,7 @@
             </div>
 
             <div class="preview-chart-card" id="prev-radar">
-                <div class="preview-chart-title">Risk Distribution</div>
+                <div class="preview-chart-title">Top Vulnerable Hosts</div>
                 <canvas id="prevRadarChart" style="max-height:170px;"></canvas>
             </div>
 
@@ -282,7 +282,7 @@
 /* ─── State ─── */
 const DEFAULTS = {
     visibility: { severity:true, type:true, radar:true },
-    types:  { severity:'doughnut', findings:'bar', risk:'radar' },
+    types:  { severity:'doughnut', findings:'bar', risk:'horizontalBar' },
     scheme: 'default',
     opts:   { tooltips:true, animate:true },
     size:   'md'
@@ -298,6 +298,9 @@ const SCHEMES = {
 };
 
 let state = JSON.parse(localStorage.getItem('sg-analytics') || 'null') || JSON.parse(JSON.stringify(DEFAULTS));
+if (state.types.risk === 'radar') {
+    state.types.risk = 'horizontalBar';
+}
 // Clean up any legacy localStorage keys to prevent errors
 if (state.visibility.timeline !== undefined || state.visibility.score !== undefined) {
     state.visibility = { severity: state.visibility.severity !== undefined ? state.visibility.severity : true, 
