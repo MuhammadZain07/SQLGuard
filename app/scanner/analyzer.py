@@ -386,6 +386,15 @@ class ResponseAnalyzer:
     def _check_union_based(self, response_text: str) -> dict:
         """Check if the union marker string appears in the response text."""
         detected = UNION_MARKER in response_text
+        if detected:
+            # Check for reflection false positives.
+            # In a real Union SQLi, the database executes the query and only returns the marker value.
+            # It does NOT return the SQL injection syntax like 'UNION SELECT' or 'UNION/**/SELECT'.
+            # If the response contains the SQL structure of the payload, it's just input reflection (XSS/HTML reflection).
+            response_lower = response_text.lower()
+            if "union select" in response_lower or "union/**/select" in response_lower:
+                logger.debug("Union marker detected but query syntax ('UNION SELECT') was also reflected. Flagging as false positive reflection.")
+                return {"detected": False}
         return {"detected": detected}
 
     def _check_time_based(self, response_ms: int, timed_out: bool,
