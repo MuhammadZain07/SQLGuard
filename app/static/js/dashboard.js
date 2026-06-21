@@ -243,6 +243,31 @@ let topHostsChartInstance = null;
 let severityChartInstance = null;
 let categoryChartInstance = null;
 
+// State defaults matching analytics.html
+const DEFAULTS = {
+    visibility: { severity: true, type: true, radar: true },
+    types: { severity: 'doughnut', findings: 'bar', risk: 'radar' },
+    scheme: 'default',
+    opts: { tooltips: true, animate: true },
+    size: 'md'
+};
+
+const SCHEMES = {
+    default: ['#f85149', '#d29922', '#58a6ff', '#3fb950'],
+    neon:    ['#ff2d78', '#f5a623', '#7b61ff', '#00e5a0'],
+    ocean:   ['#ef4444', '#f97316', '#06b6d4', '#10b981'],
+    mono:    ['#f1f5f9', '#94a3b8', '#475569', '#1e293b'],
+    fire:    ['#dc2626', '#ea580c', '#d97706', '#ca8a04'],
+    purple:  ['#a855f7', '#ec4899', '#6366f1', '#14b8a6']
+};
+
+let state = JSON.parse(localStorage.getItem('sg-analytics') || 'null') || JSON.parse(JSON.stringify(DEFAULTS));
+if (state.visibility && (state.visibility.timeline !== undefined || state.visibility.score !== undefined)) {
+    state.visibility = { severity: state.visibility.severity !== undefined ? state.visibility.severity : true, 
+                         type: state.visibility.type !== undefined ? state.visibility.type : true, 
+                         radar: state.visibility.radar !== undefined ? state.visibility.radar : true };
+}
+
 function getChartColors() {
     const isLight = document.documentElement.getAttribute('data-theme') === 'light';
     return {
@@ -250,6 +275,10 @@ function getChartColors() {
         grid: isLight ? '#e2e6ee' : '#21262d',
         border: isLight ? '#ffffff' : '#161b22'
     };
+}
+
+function getSchemeColors() {
+    return SCHEMES[state.scheme] || SCHEMES.default;
 }
 
 document.addEventListener('DOMContentLoaded', function () {
