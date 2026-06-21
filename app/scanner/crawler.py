@@ -159,7 +159,31 @@ class WebCrawler:
         logger.debug("Visiting [depth=%s]: %s", depth, normalized)
 
         try:
-            response = self.session.get(normalized, timeout=10, allow_redirects=True)
+            # Manually process redirects to check host safety of the Location header URL at each hop
+            current_url = normalized
+            redirects_followed = 0
+            max_redirects = 5
+            response = None
+
+            while redirects_followed <= max_redirects:
+                if not is_safe_url(current_url):
+                    logger.warning("SSRF guard blocked crawl redirect to: %s", current_url)
+                    return
+
+                response = self.session.get(current_url, timeout=10, allow_redirects=False)
+                
+                if 300 <= response.status_code < 400:
+                    location = response.headers.get("Location")
+                    if not location:
+                        break
+                    current_url = urljoin(current_url, location)
+                    redirects_followed += 1
+                else:
+                    break
+
+            if response is None:
+                return
+
             response.raise_for_status()
 
             # Fix #D: after redirect, record the final landed URL's path too
