@@ -30,11 +30,11 @@ class Scan(db.Model):
     __tablename__ = 'scans'
     
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True, index=True)
     target_url = db.Column(db.String(500), nullable=False)
     status = db.Column(db.String(50), default='pending')  # pending/running/completed/failed
     mode = db.Column(db.String(20), default='normal')      # normal/aggressive
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
     pages_crawled = db.Column(db.Integer, default=0)
     vuln_count = db.Column(db.Integer, default=0)
     celery_task_id = db.Column(db.String(200), nullable=True)
@@ -49,7 +49,7 @@ class Vulnerability(db.Model):
     __tablename__ = 'vulnerabilities'
 
     id = db.Column(db.Integer, primary_key=True)
-    scan_id = db.Column(db.Integer, db.ForeignKey('scans.id'), nullable=False)
+    scan_id = db.Column(db.Integer, db.ForeignKey('scans.id'), nullable=False, index=True)
     url = db.Column(db.String(500))
     parameter = db.Column(db.String(200))
     method = db.Column(db.String(10))         # GET or POST
