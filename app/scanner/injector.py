@@ -1,8 +1,10 @@
 import logging
 import time
 from pathlib import Path
+from urllib.parse import urljoin
 
 import requests
+from app.scanner.crawler import is_safe_url
 
 logger = logging.getLogger(__name__)
 
@@ -98,20 +100,42 @@ class PayloadInjector:
 
         start = time.monotonic()
         try:
-            if method == "POST":
-                response = self.session.post(
-                    url,
-                    data=injected_data,
-                    timeout=self.REQUEST_TIMEOUT,
-                    allow_redirects=True,
-                )
-            else:
-                response = self.session.get(
-                    url,
-                    params=injected_data,
-                    timeout=self.REQUEST_TIMEOUT,
-                    allow_redirects=True,
-                )
+            current_url = url
+            redirects_followed = 0
+            max_redirects = 5
+            response = None
+
+            while redirects_followed <= max_redirects:
+                if not is_safe_url(current_url):
+                    logger.warning("SSRF guard blocked injector redirect to: %s", current_url)
+                    return None
+
+                if method == "POST" and redirects_followed == 0:
+                    response = self.session.post(
+                        current_url,
+                        data=injected_data,
+                        timeout=self.REQUEST_TIMEOUT,
+                        allow_redirects=False,
+                    )
+                else:
+                    response = self.session.get(
+                        current_url,
+                        params=injected_data if redirects_followed == 0 else None,
+                        timeout=self.REQUEST_TIMEOUT,
+                        allow_redirects=False,
+                    )
+
+                if 300 <= response.status_code < 400:
+                    location = response.headers.get("Location")
+                    if not location:
+                        break
+                    current_url = urljoin(current_url, location)
+                    redirects_followed += 1
+                else:
+                    break
+
+            if response is None:
+                return None
 
             elapsed_ms = int((time.monotonic() - start) * 1000)
 
