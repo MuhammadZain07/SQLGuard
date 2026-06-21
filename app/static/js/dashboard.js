@@ -407,6 +407,31 @@ document.addEventListener('DOMContentLoaded', function () {
             categoryChartInstance.update();
         }
     });
+    // Apply visibility toggles dynamically from saved configurations
+    if (state.visibility) {
+        const topHostsCard = document.getElementById('cardTopHosts');
+        if (topHostsCard) topHostsCard.style.display = state.visibility.radar ? '' : 'none';
+        
+        const severityCard = document.getElementById('cardSeverity');
+        if (severityCard) severityCard.style.display = state.visibility.severity ? '' : 'none';
+        
+        const vulnTypesCard = document.getElementById('cardVulnTypes');
+        if (vulnTypesCard) vulnTypesCard.style.display = state.visibility.type ? '' : 'none';
+    }
+    
+    // Apply chart sizing dynamically from saved configurations
+    if (state.size) {
+        const heightMap = { sm: '120px', md: '150px', lg: '190px' };
+        const canvasHeight = heightMap[state.size] || '150px';
+        
+        document.querySelectorAll('.chart-card canvas').forEach(c => {
+            c.style.maxHeight = canvasHeight;
+        });
+        const doughnutWrap = document.querySelector('.doughnut-wrap');
+        if (doughnutWrap) {
+            doughnutWrap.style.height = canvasHeight;
+        }
+    }
 
     // Fetch and display live security news headlines in ticker
     var tickerText = document.getElementById('tickerText');
