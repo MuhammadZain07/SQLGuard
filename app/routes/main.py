@@ -286,6 +286,10 @@ def profile():
                 flash('New password and confirmation do not match.', 'error')
                 return redirect(url_for('main.profile'))
                 
+            if len(new_password) < 8:
+                flash('New password must be at least 8 characters long.', 'error')
+                return redirect(url_for('main.profile'))
+                
             if not user or not user.check_password(current_password):
                 flash('Incorrect current password.', 'error')
                 return redirect(url_for('main.profile'))
