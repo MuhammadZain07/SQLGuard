@@ -148,13 +148,32 @@ def scan_results(scan_id):
             risk_label = "LOW RISK"
             risk_class = "risk-low"
 
+    # Calculate severity and type statistics for charts in scan_result.html
+    critical = sum(1 for v in vulns if v.severity == 'CRITICAL')
+    high     = sum(1 for v in vulns if v.severity == 'HIGH')
+    medium   = sum(1 for v in vulns if v.severity == 'MEDIUM')
+    low      = sum(1 for v in vulns if v.severity == 'LOW')
+
+    error_based   = sum(1 for v in vulns if v.vuln_type == 'Error-Based')
+    boolean_based = sum(1 for v in vulns if v.vuln_type == 'Boolean-Based')
+    time_based    = sum(1 for v in vulns if v.vuln_type == 'Time-Based')
+    union_based   = sum(1 for v in vulns if v.vuln_type == 'Union-Based')
+
     return render_template(
         "scan_result.html", 
         scan=scan, 
         vulnerabilities=vulns,
         risk_score=risk_score,
         risk_label=risk_label,
-        risk_class=risk_class
+        risk_class=risk_class,
+        critical=critical,
+        high=high,
+        medium=medium,
+        low=low,
+        error_based=error_based,
+        boolean_based=boolean_based,
+        time_based=time_based,
+        union_based=union_based
     )
 
 
