@@ -425,53 +425,36 @@ function buildRadar() {
     const ctx = document.getElementById('prevRadarChart');
     if (!ctx) return;
     const col = chartColors();
-    if (state.types.risk === 'bar') {
-        charts.radar = new Chart(ctx, {
-            type:'bar',
-            data:{
-                labels:['SQLi','Auth','XSS','CSRF','RCE'],
-                datasets:[{
-                    label:'Risk',
-                    data:[80,60,40,20,10],
-                    backgroundColor: col.map(c=>c+'aa'),
-                    borderRadius:4, borderWidth:0
-                }]
-            },
-            options:{
-                plugins: pluginsBase(),
-                scales:{
-                    x:{grid:{color:gridColor()},ticks:{color:tickColor(),font:{size:10}}},
-                    y:{grid:{color:gridColor()},ticks:{color:tickColor(),font:{size:10}},suggestedMax:100}
+    const isH = state.types.risk === 'horizontalBar';
+    charts.radar = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['target.com', 'api.target.com', 'test.com', 'dev.com', 'staging.com'],
+            datasets: [{
+                label: 'Vulnerabilities',
+                data: [8, 5, 4, 3, 1],
+                backgroundColor: col,
+                borderRadius: 4,
+                borderWidth: 0
+            }]
+        },
+        options: {
+            indexAxis: isH ? 'y' : 'x',
+            plugins: pluginsBase(),
+            scales: {
+                x: { 
+                    ticks: { color: tickColor(), font: { size: 10 } }, 
+                    grid: { color: isH ? gridColor() : 'transparent', display: isH } 
                 },
-                animation:{duration:animDur()}
-            }
-        });
-    } else {
-        charts.radar = new Chart(ctx, {
-            type:'radar',
-            data:{
-                labels:['SQLi','Auth','XSS','CSRF','RCE'],
-                datasets:[{
-                    label:'Risk',
-                    data:[80,60,40,20,10],
-                    backgroundColor: col[0]+'28',
-                    borderColor: col[0],
-                    pointBackgroundColor: col[0],
-                    borderWidth:1.5
-                }]
+                y: { 
+                    ticks: { color: tickColor(), font: { size: 10 }, stepSize: 1 }, 
+                    grid: { color: isH ? 'transparent' : gridColor(), display: !isH }, 
+                    beginAtZero: true 
+                }
             },
-            options:{
-                plugins: pluginsBase(),
-                scales:{ r:{
-                    grid:{color:gridColor()},
-                    pointLabels:{color:tickColor(),font:{size:10}},
-                    ticks:{display:false},
-                    suggestedMin:0, suggestedMax:100
-                }},
-                animation:{duration:animDur()}
-            }
-        });
-    }
+            animation: { duration: animDur() }
+        }
+    });
 }
 
 /* ─── Controls ─── */
