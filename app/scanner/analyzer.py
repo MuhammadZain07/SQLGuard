@@ -226,7 +226,10 @@ class ResponseAnalyzer:
 
         # Run the detectors in priority order
         error_result   = self._check_error_based(response_text)
-        boolean_result = self._check_boolean_based(cache_key, response_size)
+        if attack_type == "boolean_based":
+            boolean_result = self._check_boolean_based(cache_key, response_size)
+        else:
+            boolean_result = {"detected": False, "delta": 0}
         
         # Only run time-based check if the payload sent was actually time-based.
         # This prevents connection drops/WAF blocks on other payloads from being flagged as time-based SQLi.
