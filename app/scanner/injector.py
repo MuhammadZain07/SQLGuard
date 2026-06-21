@@ -80,39 +80,6 @@ class PayloadInjector:
     # Public entry point
     # ------------------------------------------------------------------
 
-    def inject(self, confirmed_vulns: set | None = None) -> list[dict]:
-        """
-        Run every payload against every target.
-        Returns a flat list of result dicts.
-
-        If *confirmed_vulns* is provided it must be a set of
-        (url, parameter) tuples.  Targets whose (url, parameter) is
-        already in the set are skipped entirely, and newly confirmed
-        pairs can be added by the caller between iterations.
-        """
-        if confirmed_vulns is None:
-            confirmed_vulns = set()
-
-        results: list[dict] = []
-        total = len(self.targets) * len(ALL_PAYLOADS)
-        logger.info(
-            "Injector starting: %s target(s) × %s payload(s) = %s request(s).",
-            len(self.targets), len(ALL_PAYLOADS), total,
-        )
-
-        for target in self.targets:
-            target_key = (target["url"], target["parameter"])
-            for payload_info in ALL_PAYLOADS:
-                # Early exit: skip if this (url, parameter) is already confirmed
-                if target_key in confirmed_vulns:
-                    break
-                result = self.send_request(target, payload_info)
-                if result:
-                    results.append(result)
-
-        logger.info("Injector finished: %s result(s) collected.", len(results))
-        return results
-
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
