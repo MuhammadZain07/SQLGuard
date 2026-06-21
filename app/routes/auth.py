@@ -34,6 +34,7 @@ def login():
 
         user = User.query.filter_by(username=username).first()
         if user and user.check_password(password):
+            session.clear()
             session["user_id"] = user.id
             session["username"] = user.username
             return redirect(url_for("main.dashboard"))
