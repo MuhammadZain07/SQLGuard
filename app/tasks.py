@@ -83,20 +83,44 @@ def _build_baselines(injection_targets: list[dict], analyzer: ResponseAnalyzer) 
 
         try:
             start = time.monotonic()
-            if method == "POST":
-                r = http_requests.post(
-                    target["url"],
-                    data=neutral_data,
-                    timeout=10,
-                    allow_redirects=True,
-                )
-            else:
-                r = http_requests.get(
-                    target["url"],
-                    params=neutral_data,
-                    timeout=10,
-                    allow_redirects=True,
-                )
+            current_url = target["url"]
+            redirects_followed = 0
+            max_redirects = 5
+            r = None
+
+            while redirects_followed <= max_redirects:
+                if not is_safe_url(current_url):
+                    logger.warning("SSRF guard blocked baseline redirect to: %s", current_url)
+                    r = None
+                    break
+
+                if method == "POST" and redirects_followed == 0:
+                    r = http_requests.post(
+                        current_url,
+                        data=neutral_data,
+                        timeout=10,
+                        allow_redirects=False,
+                    )
+                else:
+                    r = http_requests.get(
+                        current_url,
+                        params=neutral_data if redirects_followed == 0 else None,
+                        timeout=10,
+                        allow_redirects=False,
+                    )
+
+                if 300 <= r.status_code < 400:
+                    location = r.headers.get("Location")
+                    if not location:
+                        break
+                    current_url = urljoin(current_url, location)
+                    redirects_followed += 1
+                else:
+                    break
+
+            if r is None:
+                continue
+
             elapsed_ms = int((time.monotonic() - start) * 1000)
 
             analyzer.set_baseline(
