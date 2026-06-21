@@ -107,13 +107,13 @@
 <div class="charts-row">
 
     <!-- horizontal bar chart: top vulnerable hosts -->
-    <div class="card-dark chart-card">
+    <div class="card-dark chart-card" id="cardTopHosts">
         <div class="chart-title">Top Vulnerable Hosts</div>
         <canvas id="topHostsChart" height="140"></canvas>
     </div>
 
     <!-- doughnut chart: severity breakdown -->
-    <div class="card-dark chart-card">
+    <div class="card-dark chart-card" id="cardSeverity">
         <div class="chart-title">Vulnerability Severity Breakdown</div>
         <div class="doughnut-wrap">
             <canvas id="statusChart"></canvas>
@@ -121,7 +121,7 @@
     </div>
 
     <!-- bar chart: vulnerability categories -->
-    <div class="card-dark chart-card">
+    <div class="card-dark chart-card" id="cardVulnTypes">
         <div class="chart-title">Vulnerability Types</div>
         <canvas id="vulnBarChart" height="140"></canvas>
     </div>
