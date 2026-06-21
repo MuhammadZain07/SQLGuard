@@ -31,6 +31,19 @@ def create_app():
             except Exception:
                 db.session.rollback()
 
+        # Create indexes if they don't exist for performance on existing databases
+        _indexes = [
+            ("idx_scans_user_id", "scans", "user_id"),
+            ("idx_scans_created_at", "scans", "created_at"),
+            ("idx_vulnerabilities_scan_id", "vulnerabilities", "scan_id"),
+        ]
+        for idx_name, table, col in _indexes:
+            try:
+                db.session.execute(db.text(f"CREATE INDEX IF NOT EXISTS {idx_name} ON {table}({col})"))
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+
     # Configure the celery instance that already exists
     from .celery_config import make_celery
     make_celery(app, celery)  # pass existing celery in, configure it
