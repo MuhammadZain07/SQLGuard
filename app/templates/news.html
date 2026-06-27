@@ -1,55 +1,45 @@
 {% extends "base.html" %}
 
-{% block content %}
-<div style="padding: 1.5rem;">
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/news.css') }}">
+{% endblock %}
 
-  <div style="margin-bottom: 1.5rem;">
-    <h2 style="color: var(--text-primary); margin: 0;">Security News</h2>
-    <p style="color: var(--text-secondary); margin: 0.25rem 0 0;">Latest SQL injection and cybersecurity news from The Hacker News</p>
+{% block content %}
+<div class="news-container">
+
+  <div class="news-header">
+    <h2 class="news-title">Security News</h2>
+    <p class="news-subtitle">Latest SQL injection and cybersecurity news from The Hacker News</p>
   </div>
 
   <!-- CASE 1: Real news came from backend -->
   {% if articles %}
 
-    <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 1rem;">
+    <p class="news-info-text">
       Showing {{ articles|length }} live articles fetched from The Hacker News
     </p>
 
     {% for article in articles %}
-    <div style="
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 1.25rem;
-      margin-bottom: 1rem;
-    ">
+    <div class="news-card">
       <!-- source + date row -->
-      <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.5rem;">
-        <span style="
-          font-size: 11px;
-          font-weight: bold;
-          padding: 2px 8px;
-          border-radius: 4px;
-          background: rgba(31,111,235,0.12);
-          color: var(--accent-blue-light);
-          border:1px solid #74c0fc;
-        ">LIVE</span>
-        <span style="color: var(--text-secondary); font-size:13px;">The Hacker News</span>
-        <span style="color: var(--text-secondary); font-size:13px; margin-left:auto;">{{ article.date }}</span>
+      <div class="news-card-meta">
+        <span class="news-badge badge-live">LIVE</span>
+        <span class="news-source">The Hacker News</span>
+        <span class="news-date">{{ article.date }}</span>
       </div>
 
       <!-- title -->
-      <h5 style="color: var(--text-primary); margin:0 0 0.5rem; font-size:15px; font-weight:600;">
+      <h5 class="news-card-title">
         {{ article.title }}
       </h5>
 
       <!-- summary -->
-      <p style="color: var(--text-secondary); font-size:14px; margin:0 0 0.75rem; line-height:1.6;">
+      <p class="news-summary">
         {{ article.summary }}
       </p>
 
       <!-- link -->
-      <a href="{{ article.link }}" target="_blank" style="color: var(--accent-blue-light); font-size:13px; text-decoration:none;">
+      <a href="{{ article.link }}" target="_blank" class="news-link">
         Read full article →
       </a>
     </div>
@@ -58,74 +48,74 @@
   <!-- CASE 2: No internet / feedparser failed — show hardcoded fallback -->
   {% else %}
 
-    <p style="color: var(--text-secondary); font-size:13px; margin-bottom:1rem;">
+    <p class="news-info-text">
       No live feed available — showing cached security news
     </p>
 
     <!-- hardcoded card 1 -->
-    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius:8px; padding:1.25rem; margin-bottom:1rem;">
-      <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.5rem;">
-        <span style="font-size:11px; font-weight:bold; padding:2px 8px; border-radius:4px; background: rgba(248,81,73,0.12); color: var(--accent-red); border:1px solid #ff6b6b;">CRITICAL</span>
-        <span style="color: var(--text-secondary); font-size:13px;">The Hacker News</span>
-        <span style="color: var(--text-secondary); font-size:13px; margin-left:auto;">May 2025</span>
+    <div class="news-card">
+      <div class="news-card-meta">
+        <span class="news-badge badge-critical">CRITICAL</span>
+        <span class="news-source">The Hacker News</span>
+        <span class="news-date">May 2025</span>
       </div>
-      <h5 style="color: var(--text-primary); margin:0 0 0.5rem; font-size:15px; font-weight:600;">Critical SQL Injection Flaw Found in Popular CMS</h5>
-      <p style="color: var(--text-secondary); font-size:14px; margin:0; line-height:1.6;">Security researchers discovered a critical SQL injection vulnerability affecting thousands of websites running a widely-used content management system.</p>
+      <h5 class="news-card-title">Critical SQL Injection Flaw Found in Popular CMS</h5>
+      <p class="news-summary" style="margin: 0;">Security researchers discovered a critical SQL injection vulnerability affecting thousands of websites running a widely-used content management system.</p>
     </div>
 
     <!-- hardcoded card 2 -->
-    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius:8px; padding:1.25rem; margin-bottom:1rem;">
-      <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.5rem;">
-        <span style="font-size:11px; font-weight:bold; padding:2px 8px; border-radius:4px; background: rgba(210,153,34,0.12); color: var(--accent-yellow); border:1px solid #ffa94d;">HIGH</span>
-        <span style="color: var(--text-secondary); font-size:13px;">Security Week</span>
-        <span style="color: var(--text-secondary); font-size:13px; margin-left:auto;">May 2025</span>
+    <div class="news-card">
+      <div class="news-card-meta">
+        <span class="news-badge badge-high">HIGH</span>
+        <span class="news-source">Security Week</span>
+        <span class="news-date">May 2025</span>
       </div>
-      <h5 style="color: var(--text-primary); margin:0 0 0.5rem; font-size:15px; font-weight:600;">Blind SQL Injection Bypasses WAF Filters</h5>
-      <p style="color: var(--text-secondary); font-size:14px; margin:0; line-height:1.6;">Attackers are using new time-based blind SQL injection techniques to bypass modern Web Application Firewalls and extract sensitive database information.</p>
+      <h5 class="news-card-title">Blind SQL Injection Bypasses WAF Filters</h5>
+      <p class="news-summary" style="margin: 0;">Attackers are using new time-based blind SQL injection techniques to bypass modern Web Application Firewalls and extract sensitive database information.</p>
     </div>
 
     <!-- hardcoded card 3 -->
-    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius:8px; padding:1.25rem; margin-bottom:1rem;">
-      <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.5rem;">
-        <span style="font-size:11px; font-weight:bold; padding:2px 8px; border-radius:4px; background: rgba(210,153,34,0.12); color: var(--accent-yellow); border:1px solid #ffa94d;">HIGH</span>
-        <span style="color: var(--text-secondary); font-size:13px;">OWASP</span>
-        <span style="color: var(--text-secondary); font-size:13px; margin-left:auto;">April 2025</span>
+    <div class="news-card">
+      <div class="news-card-meta">
+        <span class="news-badge badge-high">HIGH</span>
+        <span class="news-source">OWASP</span>
+        <span class="news-date">April 2025</span>
       </div>
-      <h5 style="color: var(--text-primary); margin:0 0 0.5rem; font-size:15px; font-weight:600;">OWASP Top 10 — SQL Injection Still #1 Threat</h5>
-      <p style="color: var(--text-secondary); font-size:14px; margin:0; line-height:1.6;">OWASP confirmed injection attacks remain the most critical web application security risk in their latest updated guidelines.</p>
+      <h5 class="news-card-title">OWASP Top 10 — SQL Injection Still #1 Threat</h5>
+      <p class="news-summary" style="margin: 0;">OWASP confirmed injection attacks remain the most critical web application security risk in their latest updated guidelines.</p>
     </div>
 
     <!-- hardcoded card 4 -->
-    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius:8px; padding:1.25rem; margin-bottom:1rem;">
-      <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.5rem;">
-        <span style="font-size:11px; font-weight:bold; padding:2px 8px; border-radius:4px; background: rgba(248,81,73,0.12); color: var(--accent-red); border:1px solid #ff6b6b;">CRITICAL</span>
-        <span style="color: var(--text-secondary); font-size:13px;">Dark Reading</span>
-        <span style="color: var(--text-secondary); font-size:13px; margin-left:auto;">April 2025</span>
+    <div class="news-card">
+      <div class="news-card-meta">
+        <span class="news-badge badge-critical">CRITICAL</span>
+        <span class="news-source">Dark Reading</span>
+        <span class="news-date">April 2025</span>
       </div>
-      <h5 style="color: var(--text-primary); margin:0 0 0.5rem; font-size:15px; font-weight:600;">Database Breach Exposes 2 Million Records via SQLi</h5>
-      <p style="color: var(--text-secondary); font-size:14px; margin:0; line-height:1.6;">A major e-commerce platform suffered a data breach after attackers exploited an unpatched SQL injection vulnerability in their login endpoint.</p>
+      <h5 class="news-card-title">Database Breach Exposes 2 Million Records via SQLi</h5>
+      <p class="news-summary" style="margin: 0;">A major e-commerce platform suffered a data breach after attackers exploited an unpatched SQL injection vulnerability in their login endpoint.</p>
     </div>
 
     <!-- hardcoded card 5 -->
-    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius:8px; padding:1.25rem; margin-bottom:1rem;">
-      <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.5rem;">
-        <span style="font-size:11px; font-weight:bold; padding:2px 8px; border-radius:4px; background: rgba(31,111,235,0.12); color: var(--accent-blue-light); border:1px solid #74c0fc;">INFO</span>
-        <span style="color: var(--text-secondary); font-size:13px;">PortSwigger</span>
-        <span style="color: var(--text-secondary); font-size:13px; margin-left:auto;">March 2025</span>
+    <div class="news-card">
+      <div class="news-card-meta">
+        <span class="news-badge badge-info">INFO</span>
+        <span class="news-source">PortSwigger</span>
+        <span class="news-date">March 2025</span>
       </div>
-      <h5 style="color: var(--text-primary); margin:0 0 0.5rem; font-size:15px; font-weight:600;">How Parameterized Queries Prevent SQL Injection</h5>
-      <p style="color: var(--text-secondary); font-size:14px; margin:0; line-height:1.6;">A detailed guide on why using prepared statements and parameterized queries is the most reliable defense against SQL injection attacks.</p>
+      <h5 class="news-card-title">How Parameterized Queries Prevent SQL Injection</h5>
+      <p class="news-summary" style="margin: 0;">A detailed guide on why using prepared statements and parameterized queries is the most reliable defense against SQL injection attacks.</p>
     </div>
 
     <!-- hardcoded card 6 -->
-    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius:8px; padding:1.25rem; margin-bottom:1rem;">
-      <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.5rem;">
-        <span style="font-size:11px; font-weight:bold; padding:2px 8px; border-radius:4px; background: rgba(234,179,8,0.12); color: var(--accent-yellow); border:1px solid #ffd43b;">MEDIUM</span>
-        <span style="color: var(--text-secondary); font-size:13px;">Pen Test Partners</span>
-        <span style="color: var(--text-secondary); font-size:13px; margin-left:auto;">March 2025</span>
+    <div class="news-card">
+      <div class="news-card-meta">
+        <span class="news-badge badge-medium">MEDIUM</span>
+        <span class="news-source">Pen Test Partners</span>
+        <span class="news-date">March 2025</span>
       </div>
-      <h5 style="color: var(--text-primary); margin:0 0 0.5rem; font-size:15px; font-weight:600;">Error-Based SQLi in PHP Applications on the Rise</h5>
-      <p style="color: var(--text-secondary); font-size:14px; margin:0; line-height:1.6;">Penetration testers report a growing number of error-based SQL injection vulnerabilities being found in legacy PHP web applications.</p>
+      <h5 class="news-card-title">Error-Based SQLi in PHP Applications on the Rise</h5>
+      <p class="news-summary" style="margin: 0;">Penetration testers report a growing number of error-based SQL injection vulnerabilities being found in legacy PHP web applications.</p>
     </div>
 
   {% endif %}
