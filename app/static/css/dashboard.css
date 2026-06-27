@@ -167,7 +167,8 @@
     color: var(--text-secondary);
     padding-left: 100%;
 }
-.news-ticker-container:hover .ticker-text {
+.news-ticker-container:hover .ticker-text,
+.ticker-wrap:hover .ticker-text {
     animation-play-state: paused;
     color: var(--text-primary);
 }
