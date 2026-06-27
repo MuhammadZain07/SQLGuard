@@ -256,12 +256,48 @@
             <div class="form-group">
                 <label class="form-label" for="confirm_password">Confirm New Password</label>
                 <input type="password" id="confirm_password" name="confirm_password" class="form-input" required placeholder="Confirm new password">
+            <div id="pwdMatchMsg" class="pwd-validation-msg"></div>
             </div>
             
-            <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; height: 38px; font-size: 14px;">
+            <button type="submit" id="updatePasswordBtn" class="btn-primary" style="width: 100%; justify-content: center; height: 38px; font-size: 14px;">
                 Update Password
             </button>
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const newPassword = document.getElementById('new_password');
+        const confirmPassword = document.getElementById('confirm_password');
+        const matchMsg = document.getElementById('pwdMatchMsg');
+        const updateBtn = document.getElementById('updatePasswordBtn');
+
+        function validatePasswords() {
+            const val1 = newPassword.value;
+            const val2 = confirmPassword.value;
+
+            if (!val1 && !val2) {
+                matchMsg.style.display = 'none';
+                updateBtn.disabled = false;
+                return;
+            }
+
+            if (val1 === val2) {
+                matchMsg.textContent = 'Passwords match';
+                matchMsg.className = 'pwd-validation-msg success';
+                updateBtn.disabled = false;
+            } else {
+                matchMsg.textContent = 'Passwords do not match';
+                matchMsg.className = 'pwd-validation-msg error';
+                updateBtn.disabled = true;
+            }
+        }
+
+        newPassword.addEventListener('input', validatePasswords);
+        confirmPassword.addEventListener('input', validatePasswords);
+    });
+</script>
 {% endblock %}

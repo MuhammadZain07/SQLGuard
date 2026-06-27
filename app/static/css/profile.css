@@ -123,3 +123,20 @@
     }
     .btn-danger:hover { opacity: 0.9; transform: translateY(-1px); }
     .btn-danger:active { transform: translateY(0); }
+
+/* Real-Time Password Validation styles */
+.pwd-validation-msg {
+    font-size: 12px;
+    margin-top: 4px;
+    display: none;
+}
+
+.pwd-validation-msg.error {
+    color: var(--accent-red);
+    display: block;
+}
+
+.pwd-validation-msg.success {
+    color: var(--accent-green);
+    display: block;
+}
