@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}500 Internal Server Error — SQLGuard{% endblock %}
+{% block breadcrumb %}500 Error{% endblock %}
+
+{% block extra_css %}
+<style>
+    .error-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 60vh;
+        text-align: center;
+        padding: 40px 20px;
+    }
+    
+    .error-code {
+        font-size: 120px;
+        font-weight: 800;
+        line-height: 1;
+        background: linear-gradient(135deg, var(--accent-red), var(--accent-yellow));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 24px;
+        filter: drop-shadow(0 4px 12px rgba(248, 81, 73, 0.15));
+    }
+    
+    .error-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 12px;
+    }
+    
+    .error-desc {
+        color: var(--text-secondary);
+        max-width: 460px;
+        font-size: 15px;
+        line-height: 1.6;
+        margin-bottom: 32px;
+    }
+    
+    .error-shield-icon {
+        width: 80px;
+        height: 80px;
+        color: var(--accent-red);
+        background: rgba(248, 81, 73, 0.1);
+        border: 1px dashed var(--accent-red);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 24px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="error-container">
+    <div class="error-shield-icon">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            <line x1="12" y1="15" x2="12" y2="17"/>
+        </svg>
+    </div>
+    
+    <div class="error-code">500</div>
+    <h1 class="error-title">Database/Execution Engine Fault</h1>
+    <p class="error-desc">
+        A system interrupt or execution fault occurred while running the background engine. Check target availability, database pools, or Celery task worker logs.
+    </p>
+    
+    <a href="{{ url_for('main.dashboard') }}" class="btn-primary" style="text-decoration: none; padding: 10px 24px;">
+        Return to Dashboard
+    </a>
+</div>
+{% endblock %}
