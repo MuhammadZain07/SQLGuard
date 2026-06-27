@@ -101,3 +101,23 @@ Alternatively, deploy the entire stack using Docker Compose:
 docker-compose up --build
 ```
 This starts the Flask app, Celery worker, and Redis services in isolated, configured containers.
+
+---
+
+## 📐 Architecture & Scan Workflow
+
+SQLGuard executes scans through a four-phase pipeline:
+
+```mermaid
+graph TD
+    A[Start Scan Request] --> B[Crawler Phase]
+    B --> C[Injection Phase]
+    C --> D[Analysis Phase]
+    D --> E[Reporting Phase]
+    E --> F[Dashboard Presentation]
+```
+
+1. **Crawler Phase:** Recursively traverses the target domain, extracting URLs, analyzing query strings, and parsing HTML forms to map potential injection vectors.
+2. **Injection Phase:** Formulates targeted SQL payloads representing Error-Based, Boolean, Time, and Union injection types, then submits them to each target input.
+3. **Analysis Phase:** Monitors HTTP responses. Analyzes headers, status codes, HTML body contents for database exception strings, time offsets (delays), or page differences.
+4. **Reporting Phase:** Classifies vulnerabilities by severity (Critical, High, Medium, Low), generates CVSS vectors, commits records to the database, and pushes live updates to the dashboard via API.
