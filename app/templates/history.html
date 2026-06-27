@@ -22,21 +22,25 @@
                 <th>Target URL</th>
                 <th>Date</th>
                 <th>Status</th>
+                <th>Action</th>
             </tr>
         </thead>
         <tbody id="historyBody">
             {% if scans %}
                 {% for s in scans %}
-                <tr>
-                    <td>#{{ s.id }}</td>
+                <tr onclick="window.location='{{ url_for('main.scan_results', scan_id=s.id) }}'" style="cursor: pointer;">
+                    <td><a href="{{ url_for('main.scan_results', scan_id=s.id) }}" style="color: inherit; text-decoration: none; font-weight: 600;">#{{ s.id }}</a></td>
                     <td class="url-cell" data-url="{{ s.target_url }}">{{ s.target_url }}</td>
                     <td>{{ s.created_at.strftime('%b %d, %Y') }}</td>
                     <td><span class="status-badge status-{{ s.status }}">{{ s.status }}</span></td>
+                    <td>
+                        <a href="{{ url_for('main.scan_results', scan_id=s.id) }}" class="btn-view" onclick="event.stopPropagation();">View</a>
+                    </td>
                 </tr>
                 {% endfor %}
             {% else %}
                 <tr>
-                    <td colspan="4" class="empty-row">No scans yet. Run your first scan!</td>
+                    <td colspan="5" class="empty-row">No scans yet. Run your first scan!</td>
                 </tr>
             {% endif %}
         </tbody>

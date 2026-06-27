@@ -39,6 +39,7 @@
     color: var(--text-secondary);
 }
 .history-table tr:last-child td { border-bottom: none; }
+.history-table tr { transition: background 0.15s ease; }
 .history-table tr:hover td { background: var(--bg-card-hover); }
 
 .url-cell {
