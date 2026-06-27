@@ -393,7 +393,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Listen for theme changes to dynamically update charts
+    // Listen for theme changes to dynamically adjust Chart.js grid lines and label colors for optimal contrast
     window.addEventListener('theme-changed', () => {
         const newColors = getChartColors();
         
