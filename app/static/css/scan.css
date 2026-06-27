@@ -1,22 +1,25 @@
 /* ── Scan Bar ── */
 .scan-bar {
     display: flex;
+    align-items: center;
+    padding: 6px 12px;
+    height: 56px;
     gap: 0;
     margin-bottom: 20px;
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: 8px;
-    overflow: hidden;
 }
 
 .scan-input {
     flex: 1;
+    height: 100%;
     background: transparent;
     border: none;
     outline: none;
     color: var(--text-primary);
     font-size: 14px;
-    padding: 14px 16px;
+    padding: 0 16px 0 4px;
     font-family: var(--font-mono);
 }
 .scan-input::placeholder { color: var(--text-muted); }
@@ -28,7 +31,9 @@
     background: var(--accent-blue);
     color: #fff;
     border: none;
-    padding: 14px 24px;
+    border-radius: 6px;
+    height: 36px;
+    padding: 0 20px;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
@@ -37,6 +42,25 @@
 }
 .scan-btn:hover { background: var(--accent-blue-light); }
 .scan-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.stop-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--accent-red);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 0 20px;
+    font-size: 14px;
+    font-weight: 600;
+    height: 36px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+}
+.stop-btn:hover { opacity: 0.9; }
 
 /* ── Progress ── */
 .progress-wrap {

@@ -179,3 +179,40 @@
         transform: translate3d(-100%, 0, 0);
     }
 }
+
+/* Mobile Scan Bar Responsiveness */
+@media (max-width: 768px) {
+    .scan-bar {
+        flex-direction: column;
+        align-items: stretch !important;
+        height: auto !important;
+        padding: 12px !important;
+        gap: 10px !important;
+    }
+    
+    .scan-input {
+        width: 100% !important;
+        height: 38px !important;
+        padding: 8px 12px !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 6px !important;
+    }
+    
+    .mode-segmented-control {
+        width: 100% !important;
+        margin-right: 0 !important;
+        justify-content: stretch !important;
+        height: 38px !important;
+    }
+    
+    .mode-segmented-control .mode-btn {
+        flex: 1 !important;
+        justify-content: center !important;
+    }
+    
+    .scan-btn, .stop-btn {
+        width: 100% !important;
+        height: 38px !important;
+        justify-content: center !important;
+    }
+}
