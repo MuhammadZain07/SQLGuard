@@ -27,3 +27,39 @@ SQLGuard is built on a modern, robust asynchronous stack:
   - **Union-Based SQLi:** Leverages `UNION SELECT` operations to retrieve schema metadata and table content.
 - **Intelligent Crawler:** Discovers web pages recursively, extracts HTML forms, maps query parameters, and catalogs inputs for targeted scanning.
 - **Interactive Security Dashboard:** Displays real-time scan progress, live console output logs, historical summaries, vulnerabilities classification charts, and cached RSS cybersecurity feeds.
+
+---
+
+## 📦 Installation & Configuration
+
+Follow these steps to set up SQLGuard locally:
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/MuhammadZain07/SQLGuard.git
+cd SQLGuard
+```
+
+### 2. Set Up a Virtual Environment
+```bash
+# Windows
+python -m venv venv
+venv\Scripts\activate
+
+# macOS/Linux
+python3 -m venv venv
+source venv/bin/activate
+```
+
+### 3. Install Dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Configure Environment Variables
+Create a file named `.env` in the root directory and define the following variables:
+```env
+SECRET_KEY=your_super_secret_jwt_and_session_signing_key
+DATABASE_URL=sqlite:///sqlguard.db
+REDIS_URL=redis://localhost:6379/0
+```
