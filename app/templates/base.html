@@ -152,16 +152,17 @@
         </div>
     </div>
 
+    <div id="toastContainer" class="toast-container"></div>
+
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-            <div class="px-4 pt-3">
-                {% for cat, msg in messages %}
-                    <div class="alert alert-{{ 'danger' if cat == 'error' else cat }} alert-dismissible fade show" role="alert">
-                        {{ msg }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                {% endfor %}
-            </div>
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    {% for cat, msg in messages %}
+                        showToast("{{ msg }}", "{{ cat }}");
+                    {% endfor %}
+                });
+            </script>
         {% endif %}
     {% endwith %}
 
@@ -204,6 +205,42 @@ function toggleSidebar() {
 }
 function toggleAcct() {
     document.getElementById('acctDrop').classList.toggle('open');
+}
+
+function showToast(message, category = 'info') {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `toast-message toast-${category}`;
+
+    let icon = '';
+    if (category === 'success') {
+        icon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`;
+    } else if (category === 'error' || category === 'danger') {
+        icon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+    } else if (category === 'warning') {
+        icon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
+    } else {
+        icon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`;
+    }
+
+    toast.innerHTML = `
+        <div class="toast-icon">${icon}</div>
+        <div class="toast-body">${message}</div>
+        <button class="toast-close-btn" onclick="this.parentElement.remove()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+    `;
+
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        toast.classList.add('toast-dismiss');
+        toast.addEventListener('animationend', () => {
+            toast.remove();
+        });
+    }, 4000);
 }
 </script>
 {% block extra_js %}{% endblock %}
