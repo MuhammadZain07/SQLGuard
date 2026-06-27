@@ -3,7 +3,7 @@ from .models.database import db
 from config import Config
 from celery import Celery
 
-# Create a real Celery instance upfront — not None
+# Create a real Celery instance upfront â€” not None
 # It gets fully configured inside create_app()
 celery = Celery(__name__)
 
@@ -54,5 +54,11 @@ def create_app():
     app.register_blueprint(main_bp)
     app.register_blueprint(scan_bp)
     app.register_blueprint(auth_bp)
+
+    from flask import render_template
+
+    @app.errorhandler(404)
+    def page_not_found(e):
+        return render_template('404.html'), 404
 
     return app

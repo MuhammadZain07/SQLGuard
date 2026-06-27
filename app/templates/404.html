@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}404 Page Not Found — SQLGuard{% endblock %}
+{% block breadcrumb %}404 Error{% endblock %}
+
+{% block extra_css %}
+<style>
+    .error-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 60vh;
+        text-align: center;
+        padding: 40px 20px;
+    }
+    
+    .error-code {
+        font-size: 120px;
+        font-weight: 800;
+        line-height: 1;
+        background: linear-gradient(135deg, var(--accent-red), var(--accent-yellow));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 24px;
+        filter: drop-shadow(0 4px 12px rgba(248, 81, 73, 0.15));
+    }
+    
+    .error-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 12px;
+    }
+    
+    .error-desc {
+        color: var(--text-secondary);
+        max-width: 460px;
+        font-size: 15px;
+        line-height: 1.6;
+        margin-bottom: 32px;
+    }
+    
+    .error-shield-icon {
+        width: 80px;
+        height: 80px;
+        color: var(--accent-red);
+        background: rgba(248, 81, 73, 0.1);
+        border: 1px dashed var(--accent-red);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 24px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="error-container">
+    <div class="error-shield-icon">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+    </div>
+    
+    <div class="error-code">404</div>
+    <h1 class="error-title">Vulnerability Mapping Exception</h1>
+    <p class="error-desc">
+        The system footprinted this route, but no active endpoint matches this path. It might have been relocated, or it never existed in the target schema.
+    </p>
+    
+    <a href="{{ url_for('main.dashboard') }}" class="btn-primary" style="text-decoration: none; padding: 10px 24px;">
+        Return to Dashboard
+    </a>
+</div>
+{% endblock %}
