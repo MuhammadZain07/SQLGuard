@@ -215,7 +215,7 @@
             <div class="danger-text">
                 Deleting your account will permanently remove all of your historical scans, reports, settings, and authorization credentials from the database. This action is immediate and cannot be undone.
             </div>
-            <form action="{{ url_for('main.profile') }}" method="POST" onsubmit="return confirm('Are you absolutely sure you want to delete your account? This will erase all your scanning history.');">
+            <form id="deleteAccountForm" action="{{ url_for('main.profile') }}" method="POST">
                 <input type="hidden" name="action" value="delete_account">
                 
                 <div class="form-group">
@@ -223,7 +223,7 @@
                     <input type="text" id="confirm_username" name="confirm_username" class="form-input" required placeholder="{{ user.username }}" autocomplete="off">
                 </div>
                 
-                <button type="submit" class="btn-danger" style="width: 100%; height: 38px;">
+                <button type="button" class="btn-danger" style="width: 100%; height: 38px;" onclick="openDeleteModal()">
                     Permanently Delete Account
                 </button>
             </form>
@@ -267,6 +267,27 @@
 </div>
 {% endblock %}
 
+<!-- Custom Account Deletion Modal -->
+<div id="deleteConfirmModal" class="custom-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: var(--accent-red);">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <h5 class="modal-title">Confirm Deletion</h5>
+        </div>
+        <div class="modal-body">
+            Are you absolutely sure you want to delete your account? This action is immediate, permanent, and cannot be undone. All your scanning history and reports will be deleted.
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+            <button type="button" class="btn-danger" onclick="submitDeleteForm()">Permanently Delete</button>
+        </div>
+    </div>
+</div>
+
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -299,5 +320,26 @@
         newPassword.addEventListener('input', validatePasswords);
         confirmPassword.addEventListener('input', validatePasswords);
     });
+
+    function openDeleteModal() {
+        const confirmInput = document.getElementById('confirm_username');
+        if (!confirmInput.value) {
+            confirmInput.reportValidity();
+            return;
+        }
+        if (confirmInput.value !== "{{ user.username }}") {
+            alert("Username mismatch. Please type your correct username.");
+            return;
+        }
+        document.getElementById('deleteConfirmModal').classList.add('open');
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteConfirmModal').classList.remove('open');
+    }
+
+    function submitDeleteForm() {
+        document.getElementById('deleteAccountForm').submit();
+    }
 </script>
 {% endblock %}
