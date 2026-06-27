@@ -121,3 +121,40 @@ graph TD
 2. **Injection Phase:** Formulates targeted SQL payloads representing Error-Based, Boolean, Time, and Union injection types, then submits them to each target input.
 3. **Analysis Phase:** Monitors HTTP responses. Analyzes headers, status codes, HTML body contents for database exception strings, time offsets (delays), or page differences.
 4. **Reporting Phase:** Classifies vulnerabilities by severity (Critical, High, Medium, Low), generates CVSS vectors, commits records to the database, and pushes live updates to the dashboard via API.
+
+---
+
+## 🔌 API Reference & Endpoints
+
+SQLGuard exposes endpoints for administration, triggering scans, retrieving statuses, and consuming security feeds:
+
+### Page Routes
+- `GET /dashboard` - Main administrative dashboard and statistics.
+- `GET /history` - List of all historical scans.
+- `GET /reports` - PDF or HTML vulnerability reports archive.
+- `GET /profile` - User profile details and settings.
+
+### API Endpoints
+- `POST /start-scan` - Initiates a Celery task for a new target scan.
+  - **Payload:** `{"target_url": "http://example.com", "mode": "normal"}`
+  - **Response:** `{"scan_id": 1, "task_id": "uuid-string", "status": "pending"}`
+- `POST /stop-scan/<id>` - Interrupts and stops a running scan task.
+  - **Response:** `{"status": "stopped"}`
+- `GET /scan-status/<id>` - Returns progress percentage, scan state, logs, and vulnerability counts.
+  - **Response:**
+    ```json
+    {
+      "status": "running",
+      "progress": 45,
+      "logs": ["Crawling started...", "Form found on /login..."],
+      "vuln_count": 2,
+      "severity_counts": {
+        "critical": 0,
+        "high": 1,
+        "medium": 1,
+        "low": 0
+      }
+    }
+    ```
+- `GET /api/news` - Serves cached RSS feed items from *The Hacker News*.
+  - **Response:** `[{"title": "Critical SQL Injection in CMS", "link": "...", "date": "..."}]`
