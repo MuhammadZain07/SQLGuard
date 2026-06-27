@@ -44,7 +44,7 @@
             <span class="nav-label">Dashboard</span>
         </a>
         <a href="{{ url_for('main.history') }}"
-           class="nav-item {% if request.endpoint == 'main.history' %}active{% endif %}">
+           class="nav-item {% if request.endpoint in ['main.history', 'main.scan_results'] %}active{% endif %}">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
             </svg>
