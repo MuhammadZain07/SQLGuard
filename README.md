@@ -63,3 +63,41 @@ SECRET_KEY=your_super_secret_jwt_and_session_signing_key
 DATABASE_URL=sqlite:///sqlguard.db
 REDIS_URL=redis://localhost:6379/0
 ```
+
+---
+
+## 🏃 Run Instructions
+
+You can run SQLGuard natively or using Docker.
+
+### Native Execution
+
+#### 1. Start the Redis Service
+Make sure Redis is installed and running on your system:
+```bash
+# Windows (WSL / native service)
+redis-server
+
+# macOS (Homebrew)
+brew services start redis
+```
+
+#### 2. Start the Celery Worker
+Run the background task processor:
+```bash
+celery -A celery_worker.celery worker --loglevel=info
+```
+
+#### 3. Run the Flask Web Application
+Run the web development server:
+```bash
+python run.py
+```
+Open your browser and navigate to `http://127.0.0.1:5000`.
+
+### Docker Compose Deployment
+Alternatively, deploy the entire stack using Docker Compose:
+```bash
+docker-compose up --build
+```
+This starts the Flask app, Celery worker, and Redis services in isolated, configured containers.
