@@ -16,8 +16,5 @@ beautifulsoup4==4.12.3
 # Read .env file
 python-dotenv==1.0.1
 
-# Production server
-gunicorn==22.0.0
-
 # for news feeding
 feedparser==6.0.11
